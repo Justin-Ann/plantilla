@@ -1,5 +1,6 @@
 # app.py
 from flask import Flask, request, jsonify, send_file, redirect, render_template
+from flask_cors import CORS
 import os
 import pandas as pd
 from werkzeug.utils import secure_filename
@@ -12,6 +13,7 @@ from mysql.connector import Error
 from datetime import datetime
 
 app = Flask(__name__, static_folder='../static', template_folder='../templates')
+CORS(app) 
 app.config['UPLOAD_FOLDER'] = '../uploads'
 app.config['ALLOWED_EXTENSIONS'] = {'xlsx', 'xls', 'csv'}
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)

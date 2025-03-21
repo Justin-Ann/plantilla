@@ -37,7 +37,8 @@ $(document).ready(function() {
         const formData = new FormData(this);
         
         $.ajax({
-            url: '/api/upload',
+            url: 'http://localhost:127.0.0.1:5000/api/upload',
+            //url: '/api/upload',
             type: 'POST',
             data: formData,
             processData: false,
