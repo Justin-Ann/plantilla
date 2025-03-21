@@ -1,3 +1,5 @@
+const API_URL = 'http://localhost:5000/';
+
 // script.js
 $(document).ready(function() {
     // Navigation
@@ -37,8 +39,7 @@ $(document).ready(function() {
         const formData = new FormData(this);
         
         $.ajax({
-            url: 'http://localhost:127.0.0.1:5000/api/upload',
-            //url: '/api/upload',
+            url: `${API_URL}/api/upload`,
             type: 'POST',
             data: formData,
             processData: false,
@@ -66,7 +67,7 @@ $(document).ready(function() {
     
     // Export button
     $('#export-btn').on('click', function() {
-        window.location.href = '/api/export-clean-data';
+        window.location.href = `${API_URL}/api/export-clean-data`;
     });
     
     // Applicant search
@@ -97,7 +98,7 @@ $(document).ready(function() {
         };
         
         $.ajax({
-            url: '/api/clean-data/' + id,
+            url: `${API_URL}/api/clean-data/` + id,
             type: 'PUT',
             contentType: 'application/json',
             data: JSON.stringify(data),
@@ -135,7 +136,7 @@ $(document).ready(function() {
         };
         
         $.ajax({
-            url: '/api/applicants',
+            url: `${API_URL}/api/applicants`,
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify(data),
@@ -166,7 +167,7 @@ $(document).ready(function() {
 // Load dashboard counts
 function loadDashboardCounts() {
     $.ajax({
-        url: '/api/clean-data',
+        url: `${API_URL}/api/clean-data`,
         type: 'GET',
         success: function(response) {
             if (response.success) {
@@ -185,7 +186,7 @@ function loadDashboardCounts() {
 // Load raw data
 function loadRawData() {
     $.ajax({
-        url: '/api/raw-data',
+        url: `${API_URL}/api/raw-data`,
         type: 'GET',
         success: function(response) {
             if (response.success) {
@@ -215,7 +216,7 @@ function loadRawData() {
 
 // Load clean data
 function loadCleanData(status = '') {
-    let url = '/api/clean-data';
+    let url = `${API_URL}/api/clean-data`;
     if (status) {
         url += '?status=' + status;
     }
@@ -252,7 +253,7 @@ function loadCleanData(status = '') {
 // Load applicants
 function loadApplicants() {
     $.ajax({
-        url: '/api/applicants',
+        url: `${API_URL}/api/applicants`,
         type: 'GET',
         success: function(response) {
             if (response.success) {
@@ -285,7 +286,7 @@ function loadApplicants() {
 // Search applicants
 function searchApplicants(term) {
     $.ajax({
-        url: '/api/applicants/search?term=' + term,
+        url: `${API_URL}/api/applicants/search?term=` + term,
         type: 'GET',
         success: function(response) {
             if (response.success) {
@@ -318,7 +319,7 @@ function searchApplicants(term) {
 // Load plantilla options for applicant form
 function loadPlantillaOptions() {
     $.ajax({
-        url: '/api/clean-data',
+        url: `${API_URL}/api/clean-data`,
         type: 'GET',
         success: function(response) {
             if (response.success) {
@@ -338,7 +339,7 @@ function loadPlantillaOptions() {
 // Edit record
 function editRecord(id) {
     $.ajax({
-        url: '/api/clean-data',
+        url: `${API_URL}/api/clean-data`,
         type: 'GET',
         success: function(response) {
             if (response.success) {
