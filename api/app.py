@@ -24,6 +24,21 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
+'''def connect_to_database():
+    try:
+        connection = mysql.connector.connect(
+            host='localhost',
+            database='plantilla_management',
+            user='tequila',
+            password='0225'
+        )
+        if connection.is_connected():
+            print("Connected to database successfully")
+            return connection
+    except Error as e:
+        print(f"Error connecting to MySQL: {e}")
+        return None'''
+
 def connect_to_database():
     try:
         connection = mysql.connector.connect(
@@ -33,10 +48,29 @@ def connect_to_database():
             password='0225'
         )
         if connection.is_connected():
+            print("Connected to database successfully")
+            
+            # Check if 'is_latest' column exists in 'raw_data' table
+            cursor = connection.cursor()
+            cursor.execute("""
+                SELECT COUNT(*) 
+                FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_NAME = 'raw_data' AND COLUMN_NAME = 'is_latest'
+            """)
+            column_exists = cursor.fetchone()[0]
+
+            # If 'is_latest' column does not exist, add it
+            if not column_exists:
+                cursor.execute("ALTER TABLE raw_data ADD COLUMN is_latest BOOLEAN DEFAULT FALSE")
+                print("Added 'is_latest' column to 'raw_data' table.")
+            
+            cursor.close()
             return connection
+
     except Error as e:
         print(f"Error connecting to MySQL: {e}")
         return None
+
 
 # Root route to handle the homepage
 @app.route('/')

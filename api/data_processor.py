@@ -15,10 +15,24 @@ def connect_to_database():
             password='0225'
         )
         if connection.is_connected():
+            print("Connected to database successfully")
             return connection
     except Error as e:
         print(f"Error connecting to MySQL: {e}")
         return None
+
+#new
+def parse_date(date_str):
+    """Parses a date string into a date object, handling different formats."""
+    if pd.isna(date_str) or not isinstance(date_str, str):
+        return None
+    for fmt in ('%Y-%m-%d', '%m/%d/%Y'):
+        try:
+            return datetime.strptime(date_str, fmt).date()
+        except ValueError:
+            continue
+    return None
+
 
 def process_raw_data(file_path):
     try:
@@ -66,10 +80,10 @@ def process_raw_data(file_path):
             if not pd.isna(row['DATEVACATED']):
                 if isinstance(row['DATEVACATED'], str):
                     try:
-                        date_vacated = datetime.strptime(row['DATEVACATED'], '%Y-%m-%d').date()
+                        date_vacated = parse_date(row['DATEVACATED'], '%Y-%m-%d').date()
                     except ValueError:
                         try:
-                            date_vacated = datetime.strptime(row['DATEVACATED'], '%m/%d/%Y').date()
+                            date_vacated = parse_date(row['DATEVACATED'], '%m/%d/%Y').date()
                         except ValueError:
                             date_vacated = None
                 else:
