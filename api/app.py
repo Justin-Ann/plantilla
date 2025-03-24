@@ -75,7 +75,7 @@ def connect_to_database():
 # Root route to handle the homepage
 @app.route('/')
 def home():
-    return redirect('/index.php')
+    return redirect('/index.html')
 
 # Route to serve static HTML files
 @app.route('/<path:path>')
