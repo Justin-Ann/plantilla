@@ -10,7 +10,7 @@ from data_processor import process_raw_data
 import mysql.connector
 from mysql.connector import Error
 from datetime import datetime
-from flask_cors import CORS
+from flask_cors import CORS    
 
 app = Flask(__name__, static_folder='../static', template_folder='../templates')
 app.config['UPLOAD_FOLDER'] = '../uploads'
