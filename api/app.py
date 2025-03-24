@@ -83,7 +83,7 @@ def serve_static(path):
     # This will serve files from the static folder (HTML, CSS, JS)
     return app.send_static_file(path)
 
-@app.route('/upload', methods=['POST'])
+'''@app.route('/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
         return jsonify({"error": "No file uploaded"}), 400
@@ -108,7 +108,41 @@ def upload_file():
         return jsonify(processed_data)
 
     except Exception as e:
+        return jsonify({"error": str(e)}), 500'''
+
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    if 'file' not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+    
+    file = request.files['file']
+    
+    if file.filename == '':
+        return jsonify({"error": "No selected file"}), 400
+    
+    if not allowed_file(file.filename):
+        return jsonify({"error": "Invalid file format. Only CSV, XLS, and XLSX are allowed."}), 400
+
+    filename = secure_filename(file.filename)
+
+    try:
+        if filename.endswith('.csv'):
+            df = pd.read_csv(file)
+        else:
+            df = pd.read_excel(file)
+
+        # 🔴 FIX: Replace NaN values with None (NULL in MySQL)
+        df = df.where(pd.notna(df), None)
+
+        # 🔴 FIX: Convert all columns to string to avoid accidental NaN issues
+        df = df.astype(str)
+
+        processed_data = process_raw_data(df)
+        return jsonify(processed_data)
+
+    except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 @app.route('/api/upload', methods=['POST'])
 def api_upload_file():
