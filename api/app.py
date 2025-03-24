@@ -265,7 +265,7 @@ def update_clean_data(id):
             connection.close()
         return jsonify({'success': False, 'message': f'Database error: {str(e)}'})
 
-@app.route('/api/applicants', methods=['GET'])
+'''@app.route('/api/applicants', methods=['GET'])
 def get_applicants():
     connection = connect_to_database()
     if not connection:
@@ -286,6 +286,88 @@ def get_applicants():
         connection.close()
         
         return jsonify({'success': True, 'data': data})
+    except Error as e:
+        if connection:
+            connection.close()
+        return jsonify({'success': False, 'message': f'Database error: {str(e)}'})'''
+
+# Add these routes to app.py
+
+@app.route('/api/applicants/<int:id>', methods=['GET'])
+def get_applicant(id):
+    connection = connect_to_database()
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection failed'})
+    
+    try:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM applicants WHERE id = %s", (id,))
+        data = cursor.fetchone()
+        
+        if not data:
+            cursor.close()
+            connection.close()
+            return jsonify({'success': False, 'message': 'Applicant not found'})
+        
+        # Convert datetime objects to strings
+        for key, value in data.items():
+            if isinstance(value, datetime):
+                data[key] = value.strftime('%Y-%m-%d')
+        
+        cursor.close()
+        connection.close()
+        
+        return jsonify({'success': True, 'data': data})
+    except Error as e:
+        if connection:
+            connection.close()
+        return jsonify({'success': False, 'message': f'Database error: {str(e)}'})
+
+@app.route('/api/applicants/<int:id>', methods=['PUT'])
+def update_applicant(id):
+    data = request.json
+    
+    connection = connect_to_database()
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection failed'})
+    
+    try:
+        cursor = connection.cursor()
+        
+        update_query = """
+        UPDATE applicants SET 
+            fullname = %s,
+            sex = %s,
+            position_title = %s,
+            techcode = %s,
+            date_of_birth = %s,
+            date_last_promotion = %s,
+            date_last_increment = %s,
+            date_of_longevity = %s,
+            appointment_status = %s,
+            plantilla_no = %s
+        WHERE id = %s
+        """
+        
+        cursor.execute(update_query, (
+            data.get('fullname'),
+            data.get('sex'),
+            data.get('position_title'),
+            data.get('techcode'),
+            data.get('date_of_birth'),
+            data.get('date_last_promotion'),
+            data.get('date_last_increment'),
+            data.get('date_of_longevity'),
+            data.get('appointment_status'),
+            data.get('plantilla_no'),
+            id
+        ))
+        
+        connection.commit()
+        cursor.close()
+        connection.close()
+        
+        return jsonify({'success': True, 'message': 'Applicant updated successfully'})
     except Error as e:
         if connection:
             connection.close()

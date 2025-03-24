@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:5000';
+const API_URL = 'http://localhost:5000/';
 
 // script.js
 $(document).ready(function() {
@@ -75,6 +75,64 @@ $(document).ready(function() {
         const searchTerm = $(this).val();
         searchApplicants(searchTerm);
     });
+
+    // Add this to the editApplicant function in script.js, just before showing the modal
+
+function editApplicant(id) {
+    // First, load the plantilla options for the edit form
+    $.ajax({
+        url: `${API_URL}/api/clean-data`,
+        type: 'GET',
+        success: function(response) {
+            if (response.success) {
+                const selectElement = $('#edit-applicant-plantilla-no');
+                selectElement.empty();
+                
+                // Add an empty option
+                selectElement.append('<option value="">-- Select Plantilla --</option>');
+                
+                response.data.forEach(function(item) {
+                    selectElement.append(`
+                        <option value="${item.plantilla_no}">${item.plantilla_no} - ${item.position_title}</option>
+                    `);
+                });
+                
+                // Now fetch the applicant data
+                $.ajax({
+                    url: `${API_URL}/api/applicants/${id}`,
+                    type: 'GET',
+                    success: function(response) {
+                        if (response.success) {
+                            const applicant = response.data;
+                            
+                            $('#edit-applicant-id').val(applicant.id);
+                            $('#edit-fullname').val(applicant.fullname);
+                            $('#edit-sex').val(applicant.sex);
+                            $('#edit-position-title').val(applicant.position_title);
+                            $('#edit-techcode').val(applicant.techcode);
+                            $('#edit-date-of-birth').val(applicant.date_of_birth);
+                            $('#edit-date-last-promotion').val(applicant.date_last_promotion);
+                            $('#edit-date-last-increment').val(applicant.date_last_increment);
+                            $('#edit-date-of-longevity').val(applicant.date_of_longevity);
+                            $('#edit-appointment-status').val(applicant.appointment_status);
+                            $('#edit-applicant-plantilla-no').val(applicant.plantilla_no);
+                            
+                            $('#edit-applicant-modal').css('display', 'block');
+                        } else {
+                            alert('Error: ' + response.message);
+                        }
+                    },
+                    error: function() {
+                        alert('Server error occurred while fetching applicant data.');
+                    }
+                });
+            }
+        },
+        error: function() {
+            alert('Server error occurred while loading plantilla options.');
+        }
+    });
+}
     
     // Add applicant button
     $('#add-applicant-btn').on('click', function() {

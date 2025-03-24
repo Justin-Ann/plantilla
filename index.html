@@ -170,6 +170,70 @@
         </div>
     </div>
     
+<!-- Add this HTML to your index.html file, ideally near where the other modals are defined -->
+
+<!-- Edit Applicant Modal -->
+<div id="edit-applicant-modal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Edit Applicant</h2>
+        <form id="edit-applicant-form">
+            <input type="hidden" id="edit-applicant-id">
+            <div class="form-group">
+                <label for="edit-fullname">Full Name:</label>
+                <input type="text" id="edit-fullname" required>
+            </div>
+            <div class="form-group">
+                <label for="edit-sex">Sex:</label>
+                <select id="edit-sex">
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="edit-position-title">Position Title:</label>
+                <input type="text" id="edit-position-title">
+            </div>
+            <div class="form-group">
+                <label for="edit-techcode">Tech Code:</label>
+                <input type="text" id="edit-techcode">
+            </div>
+            <div class="form-group">
+                <label for="edit-date-of-birth">Date of Birth:</label>
+                <input type="date" id="edit-date-of-birth">
+            </div>
+            <div class="form-group">
+                <label for="edit-date-last-promotion">Date of Last Promotion:</label>
+                <input type="date" id="edit-date-last-promotion">
+            </div>
+            <div class="form-group">
+                <label for="edit-date-last-increment">Date of Last Increment:</label>
+                <input type="date" id="edit-date-last-increment">
+            </div>
+            <div class="form-group">
+                <label for="edit-date-of-longevity">Date of Longevity:</label>
+                <input type="date" id="edit-date-of-longevity">
+            </div>
+            <div class="form-group">
+                <label for="edit-appointment-status">Appointment Status:</label>
+                <select id="edit-appointment-status">
+                    <option value="PERMANENT">Permanent</option>
+                    <option value="TEMPORARY">Temporary</option>
+                    <option value="CONTRACTUAL">Contractual</option>
+                    <option value="CASUAL">Casual</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="edit-applicant-plantilla-no">Plantilla No:</label>
+                <select id="edit-applicant-plantilla-no"></select>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn primary-btn">Update Applicant</button>
+            </div>
+        </form>
+    </div>
+</div>
+
     <!-- Modal for adding applicant -->
     <div id="applicant-modal" class="modal">
         <div class="modal-content">
