@@ -289,20 +289,16 @@ def process_raw_data(file_path):
         # Replace NaN values with None
         df = df.where(pd.notna(df), None)
         
-        # Convert all columns to string to avoid accidental NaN issues
-        df = df.astype(str)
+        # Convert all columns to string to avoid NaN issues
+        for col in df.columns:
+            if df[col].dtype != 'datetime64[ns]':
+                df[col] = df[col].astype(str)
         
         # Check required columns
         required_columns = [
             'PLANTILLA NO.', 'PLANTILLADIVISION', 'PLANTILLA SECTIONDEFINITION', 
             'EQUIVALENTDIVISION', 'POSITION TITLE', 'ITEM NUMBER', 'SG', 
             'DATEVACATED', 'VACATED DUE TO', 'VACATED BY'
-        ]
-        
-        # Check applicant columns
-        applicant_columns = [
-            'FULLNAME', 'SEX', 'POSITION TITLE', 'TECHCODE', 'DATE OF BIRTH',
-            'DATELASTPROMOTION', 'DATELAST INCREMENT', 'DATE OFLONGEVITY', 'APPOINTMENT STATUS'
         ]
         
         missing_columns = [col for col in required_columns if col not in df.columns]
@@ -319,10 +315,13 @@ def process_raw_data(file_path):
         # Mark all existing records as not latest
         cursor.execute("UPDATE raw_data SET is_latest = FALSE")
         
-        # Insert new raw data and collect the raw_data_ids for each plantilla_no
-        plantilla_data = {}
+        # Process each row
         for _, row in df.iterrows():
-            insert_query = """
+            # 1. Insert into raw_data
+            plantilla_no = row['PLANTILLA NO.']
+            date_vacated = parse_date(row['DATEVACATED']) if row['DATEVACATED'] and row['DATEVACATED'] != 'None' else None
+            
+            insert_raw_query = """
             INSERT INTO raw_data (
                 plantilla_no, plantilla_division, plantilla_sectiondefinition, 
                 equivalent_division, position_title, item_number, sg, 
@@ -330,11 +329,7 @@ def process_raw_data(file_path):
             ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, TRUE)
             """
             
-            date_vacated = parse_date(row['DATEVACATED']) if row['DATEVACATED'] else None
-            
-            plantilla_no = row['PLANTILLA NO.']
-            
-            cursor.execute(insert_query, (
+            cursor.execute(insert_raw_query, (
                 plantilla_no,
                 row['PLANTILLADIVISION'],
                 row['PLANTILLA SECTIONDEFINITION'],
@@ -347,24 +342,10 @@ def process_raw_data(file_path):
                 row['VACATED BY']
             ))
             
-            # Store the last inserted ID for this plantilla_no
-            last_id = cursor.lastrowid
-            plantilla_data[plantilla_no] = {
-                'id': last_id,
-                'division': row['PLANTILLADIVISION'],
-                'section': row['PLANTILLA SECTIONDEFINITION'],
-                'equiv_division': row['EQUIVALENTDIVISION'],
-                'position': row['POSITION TITLE'],
-                'item_number': row['ITEM NUMBER'],
-                'sg': row['SG'],
-                'date_vacated': date_vacated,
-                'vacated_due_to': row['VACATED DUE TO'],
-                'vacated_by': row['VACATED BY']
-            }
-        
-        # Insert or update clean_data using ON DUPLICATE KEY UPDATE
-        for plantilla_no, data in plantilla_data.items():
-            upsert_query = """
+            raw_data_id = cursor.lastrowid
+            
+            # 2. Insert or update clean_data
+            upsert_clean_query = """
             INSERT INTO clean_data (
                 plantilla_no, plantilla_division, plantilla_sectiondefinition, 
                 equivalent_division, position_title, item_number, sg, 
@@ -386,77 +367,86 @@ def process_raw_data(file_path):
                 raw_data_id = VALUES(raw_data_id)
             """
             
-            cursor.execute(upsert_query, (
+            cursor.execute(upsert_clean_query, (
                 plantilla_no,
-                data['division'],
-                data['section'],
-                data['equiv_division'],
-                data['position'],
-                data['item_number'],
-                data['sg'],
-                data['date_vacated'],
-                data['vacated_due_to'],
-                data['vacated_by'],
-                data['id']
+                row['PLANTILLADIVISION'],
+                row['PLANTILLA SECTIONDEFINITION'],
+                row['EQUIVALENTDIVISION'],
+                row['POSITION TITLE'],
+                row['ITEM NUMBER'],
+                row['SG'],
+                date_vacated,
+                row['VACATED DUE TO'],
+                row['VACATED BY'],
+                raw_data_id
             ))
-        
-        # Process applicant data if available
-        for _, row in df.iterrows():
-            if all(col in df.columns for col in applicant_columns) and 'FULLNAME' in row and row['FULLNAME']:
-                # Check if applicant with this plantilla_no already exists
-                check_query = "SELECT id FROM applicants WHERE plantilla_no = %s"
-                cursor.execute(check_query, (row['PLANTILLA NO.'],))
-                existing = cursor.fetchone()
+            
+            # 3. Insert or update applicants
+            # Check if we have required applicant fields
+            applicant_fields = {
+                'fullname': row.get('FULLNAME', row.get('VACATED BY', None)),
+                'sex': row.get('SEX', None),
+                'position_title': row.get('POSITION TITLE', None),
+                'techcode': row.get('TECHCODE', None),
+                'date_of_birth': parse_date(row.get('DATE OF BIRTH', None)),
+                'date_last_promotion': parse_date(row.get('DATELASTPROMOTION', None)),
+                'date_last_increment': parse_date(row.get('DATELAST INCREMENT', None)),
+                'date_of_longevity': parse_date(row.get('DATE OFLONGEVITY', None)),
+                'appointment_status': row.get('APPOINTMENT STATUS', 'PERMANENT')
+            }
+            
+            if applicant_fields['fullname'] and applicant_fields['fullname'] != 'None':
+                upsert_applicant_query = """
+                INSERT INTO applicants (
+                    fullname, sex, position_title, techcode, date_of_birth,
+                    date_last_promotion, date_last_increment, date_of_longevity,
+                    appointment_status, plantilla_no
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON DUPLICATE KEY UPDATE
+                    sex = COALESCE(VALUES(sex), sex),
+                    position_title = COALESCE(VALUES(position_title), position_title),
+                    techcode = COALESCE(VALUES(techcode), techcode),
+                    date_of_birth = COALESCE(VALUES(date_of_birth), date_of_birth),
+                    date_last_promotion = COALESCE(VALUES(date_last_promotion), date_last_promotion),
+                    date_last_increment = COALESCE(VALUES(date_last_increment), date_last_increment),
+                    date_of_longevity = COALESCE(VALUES(date_of_longevity), date_of_longevity),
+                    appointment_status = COALESCE(VALUES(appointment_status), appointment_status)
+                """
                 
-                if existing:
-                    # Update existing applicant
-                    update_query = """
-                    UPDATE applicants SET
-                        fullname = %s,
-                        sex = %s,
-                        position_title = %s,
-                        techcode = %s,
-                        date_of_birth = %s,
-                        date_last_promotion = %s,
-                        date_last_increment = %s,
-                        date_of_longevity = %s,
-                        appointment_status = %s
-                    WHERE plantilla_no = %s
-                    """
-                    
-                    cursor.execute(update_query, (
-                        row['FULLNAME'],
-                        row['SEX'],
-                        row['POSITION TITLE'],
-                        row['TECHCODE'],
-                        parse_date(row['DATE OF BIRTH']),
-                        parse_date(row['DATELASTPROMOTION']),
-                        parse_date(row['DATELAST INCREMENT']),
-                        parse_date(row['DATE OFLONGEVITY']),
-                        row['APPOINTMENT STATUS'],
-                        row['PLANTILLA NO.']
+                try:
+                    cursor.execute(upsert_applicant_query, (
+                        applicant_fields['fullname'],
+                        applicant_fields['sex'],
+                        applicant_fields['position_title'],
+                        applicant_fields['techcode'],
+                        applicant_fields['date_of_birth'],
+                        applicant_fields['date_last_promotion'],
+                        applicant_fields['date_last_increment'],
+                        applicant_fields['date_of_longevity'],
+                        applicant_fields['appointment_status'],
+                        plantilla_no
                     ))
-                else:
-                    # Insert new applicant
-                    insert_query = """
+                except Error as e:
+                    # Handle the case where plantilla_no doesn't exist in clean_data yet
+                    print(f"Error adding applicant: {e}")
+                    # Try inserting without the foreign key constraint
+                    alt_insert_query = """
                     INSERT INTO applicants (
                         fullname, sex, position_title, techcode, date_of_birth,
                         date_last_promotion, date_last_increment, date_of_longevity,
-                        appointment_status, plantilla_no
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        appointment_status
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """
-                    
-                    cursor.execute(insert_query, (
-                        row['FULLNAME'],
-                        row['SEX'],
-                        row['POSITION TITLE'],
-                        row['TECHCODE'],
-                        parse_date(row['DATE OF BIRTH']),
-                        parse_date(row['DATELASTPROMOTION']),
-                        parse_date(row['DATELAST INCREMENT']),
-                        parse_date(row['DATE OFLONGEVITY']),
-                        row['APPOINTMENT STATUS'],
-                        row['PLANTILLA NO.']
+                    cursor.execute(alt_insert_query, (
+                        applicant_fields['fullname'],
+                        applicant_fields['sex'],
+                        applicant_fields['position_title'],
+                        applicant_fields['techcode'],
+                        applicant_fields['date_of_birth'],
+                        applicant_fields['date_last_promotion'],
+                        applicant_fields['date_last_increment'],
+                        applicant_fields['date_of_longevity'],
+                        applicant_fields['appointment_status']
                     ))
         
         connection.commit()

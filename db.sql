@@ -97,3 +97,5 @@ WHERE is_latest = TRUE
 GROUP BY plantilla_no 
 HAVING COUNT(*) > 1;
 
+ALTER TABLE applicants MODIFY COLUMN plantilla_no VARCHAR(50) NULL;
+ALTER TABLE applicants DROP FOREIGN KEY applicants_ibfk_1;
