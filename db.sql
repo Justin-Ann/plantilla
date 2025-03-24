@@ -48,7 +48,8 @@ SELECT
     r.equivalent_division, r.position_title, r.item_number, r.sg, 
     r.date_vacated, r.vacated_due_to, r.vacated_by, 'On-process', 'On-process', r.id
 FROM raw_data AS r
-WHERE r.is_latest = TRUE
+WHERE r.is_latest = TRUE 
+AND r.id = (SELECT MAX(id) FROM raw_data WHERE plantilla_no = r.plantilla_no)
 ON DUPLICATE KEY UPDATE 
     plantilla_division = r.plantilla_division,
     plantilla_sectiondefinition = r.plantilla_sectiondefinition,
@@ -87,3 +88,12 @@ CREATE TABLE users (
 
 -- Insert admin user
 INSERT INTO users (username, password, role) VALUES ('admin', '$2y$10$8OxDJT4rZQp0tOHXGIX0HeWJA9UR.YG7TAq3OPz1pLzz7KxVISB2a', 'admin');
+
+SELECT * FROM clean_data WHERE plantilla_no = '826';
+
+SELECT plantilla_no, COUNT(*) 
+FROM raw_data 
+WHERE is_latest = TRUE 
+GROUP BY plantilla_no 
+HAVING COUNT(*) > 1;
+
