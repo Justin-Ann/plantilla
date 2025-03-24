@@ -38,6 +38,31 @@ CREATE TABLE clean_data (
     FOREIGN KEY (raw_data_id) REFERENCES raw_data(id)
 );
 
+INSERT INTO clean_data (
+    plantilla_no, plantilla_division, plantilla_sectiondefinition, 
+    equivalent_division, position_title, item_number, sg, 
+    date_vacated, vacated_due_to, vacated_by, remarks, status, raw_data_id
+) 
+SELECT 
+    r.plantilla_no, r.plantilla_division, r.plantilla_sectiondefinition, 
+    r.equivalent_division, r.position_title, r.item_number, r.sg, 
+    r.date_vacated, r.vacated_due_to, r.vacated_by, 'On-process', 'On-process', r.id
+FROM raw_data AS r
+WHERE r.is_latest = TRUE
+ON DUPLICATE KEY UPDATE 
+    plantilla_division = r.plantilla_division,
+    plantilla_sectiondefinition = r.plantilla_sectiondefinition,
+    equivalent_division = r.equivalent_division,
+    position_title = r.position_title,
+    item_number = r.item_number,
+    sg = r.sg,
+    date_vacated = r.date_vacated,
+    vacated_due_to = r.vacated_due_to,
+    vacated_by = r.vacated_by,
+    remarks = 'On-process',
+    status = 'On-process',
+    raw_data_id = r.id;
+
 CREATE TABLE applicants (
     id INT AUTO_INCREMENT PRIMARY KEY,
     fullname VARCHAR(100),
