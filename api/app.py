@@ -29,7 +29,7 @@ def connect_to_database():
         connection = mysql.connector.connect(
             host='localhost',
             database='plantilla_management',
-            user='root',
+            user='tequila',
             password='0225'
         )
         if connection.is_connected():
