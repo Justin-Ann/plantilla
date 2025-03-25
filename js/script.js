@@ -512,32 +512,41 @@ function deleteFile(fileId) {
 
 // Function to edit file
 function editFile(fileId) {
-    // First, get the file content
     $.ajax({
         url: `${API_URL}/files/${fileId}/content`,
         type: 'GET',
         success: function(response) {
             if (response.success) {
-                // Show file editor modal
-                showFileEditor(fileId, response.data, response.file_info);
+                try {
+                    showFileEditor(fileId, response.data, response.file_info);
+                } catch (error) {
+                    console.error('Error showing file editor:', error);
+                    alert('Error displaying file content. Please check console for details.');
+                }
             } else {
                 alert('Error: ' + response.message);
             }
         },
-        error: function() {
-            alert('Server error occurred.');
+        error: function(xhr, status, error) {
+            console.error('Server error:', xhr.responseText);
+            alert('Server error occurred. Please check console for details.');
         }
     });
 }
 
 function showFileEditor(fileId, data, fileInfo) {
+    if (!data || !Array.isArray(data) || data.length === 0) {
+        alert('No valid data to edit');
+        return;
+    }
+
     // Create modal for file editing if it doesn't exist
     if (!$('#file-editor-modal').length) {
         $('body').append(`
             <div id="file-editor-modal" class="modal">
                 <div class="modal-content" style="width: 90%; max-width: none;">
                     <span class="close">&times;</span>
-                    <h2>Edit File</h2>
+                    <h2>Edit File: ${fileInfo.original_filename}</h2>
                     <div id="file-editor-grid" style="height: 500px; overflow: auto;">
                         <table id="file-editor-table" class="data-table">
                             <thead></thead>
@@ -548,63 +557,41 @@ function showFileEditor(fileId, data, fileInfo) {
                 </div>
             </div>
         `);
+
+        // Add close button handler
+        $('#file-editor-modal .close').on('click', function() {
+            $('#file-editor-modal').css('display', 'none');
+        });
     }
 
     const modal = $('#file-editor-modal');
     const table = $('#file-editor-table');
     
     // Clear existing content
-    table.find('thead').empty();
-    table.find('tbody').empty();
+    table.find('thead, tbody').empty();
     
-    // Add headers
-    const headers = Object.keys(data[0]);
-    const headerRow = $('<tr>');
-    headers.forEach(header => {
-        headerRow.append(`<th>${header}</th>`);
-    });
-    table.find('thead').append(headerRow);
-    
-    // Add data rows
-    data.forEach(row => {
-        const tableRow = $('<tr>');
+    try {
+        // Add headers
+        const headers = Object.keys(data[0]);
+        const headerRow = $('<tr>');
         headers.forEach(header => {
-            tableRow.append(`<td contenteditable="true">${row[header] || ''}</td>`);
+            headerRow.append(`<th>${header}</th>`);
         });
-        table.find('tbody').append(tableRow);
-    });
-    
-    // Handle save
-    $('#save-file-changes').off('click').on('click', function() {
-        const updatedData = [];
-        table.find('tbody tr').each(function() {
-            const row = {};
-            $(this).find('td').each(function(i) {
-                row[headers[i]] = $(this).text();
+        table.find('thead').append(headerRow);
+        
+        // Add data rows
+        data.forEach(row => {
+            const tableRow = $('<tr>');
+            headers.forEach(header => {
+                const cellValue = row[header] !== null ? row[header] : '';
+                tableRow.append(`<td contenteditable="true">${cellValue}</td>`);
             });
-            updatedData.push(row);
+            table.find('tbody').append(tableRow);
         });
         
-        // Save changes
-        $.ajax({
-            url: `${API_URL}/files/${fileId}/content`,
-            type: 'PUT',
-            contentType: 'application/json',
-            data: JSON.stringify({ content: updatedData }),
-            success: function(response) {
-                if (response.success) {
-                    alert('File updated successfully!');
-                    modal.css('display', 'none');
-                    loadUploadedFiles($('#month-picker').val());
-                } else {
-                    alert('Error: ' + response.message);
-                }
-            },
-            error: function() {
-                alert('Server error occurred.');
-            }
-        });
-    });
-    
-    modal.css('display', 'block');
+        modal.css('display', 'block');
+    } catch (error) {
+        console.error('Error building table:', error);
+        alert('Error building table. Please check console for details.');
+    }
 }

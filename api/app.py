@@ -563,11 +563,8 @@ def update_file(file_id):
 
 @app.route('/api/files/<int:file_id>/content', methods=['GET'])
 def get_file_content(file_id):
-    connection = connect_to_database()
-    if not connection:
-        return jsonify({'success': False, 'message': 'Database connection failed'})
-    
     try:
+        connection = connect_to_database()
         cursor = connection.cursor(dictionary=True)
         cursor.execute("SELECT * FROM uploaded_files WHERE id = %s", (file_id,))
         file_info = cursor.fetchone()
@@ -575,26 +572,33 @@ def get_file_content(file_id):
         if not file_info:
             return jsonify({'success': False, 'message': 'File not found'})
         
-        # Convert upload_date to string format
-        file_info['upload_date'] = file_info['upload_date'].strftime('%Y-%m-%d %H:%M:%S')
+        # Convert datetime values to strings
+        if file_info.get('upload_date'):
+            file_info['upload_date'] = file_info['upload_date'].strftime('%Y-%m-%d %H:%M:%S')
         
-        # Read file content
-        if file_info['file_path'].endswith('.csv'):
-            df = pd.read_csv(file_info['file_path'])
-        else:
-            df = pd.read_excel(file_info['file_path'])
-        
-        # Convert any datetime columns to string format
-        for col in df.columns:
-            if pd.api.types.is_datetime64_any_dtype(df[col]):
-                df[col] = df[col].dt.strftime('%Y-%m-%d')
-        
-        return jsonify({
-            'success': True,
-            'data': df.to_dict('records'),
-            'file_info': file_info
-        })
-        
+        # Read and process file content
+        try:
+            if file_info['file_path'].endswith('.csv'):
+                df = pd.read_csv(file_info['file_path'])
+            else:
+                df = pd.read_excel(file_info['file_path'])
+            
+            # Convert all datetime columns to string format
+            for col in df.columns:
+                if pd.api.types.is_datetime64_any_dtype(df[col]):
+                    df[col] = df[col].dt.strftime('%Y-%m-%d')
+                elif df[col].dtype == 'object':
+                    # Handle potential datetime strings
+                    df[col] = df[col].apply(lambda x: pd.to_datetime(x).strftime('%Y-%m-%d') if pd.notna(x) and isinstance(x, str) else x)
+            
+            return jsonify({
+                'success': True,
+                'data': df.to_dict('records'),
+                'file_info': file_info
+            })
+        except Exception as e:
+            return jsonify({'success': False, 'message': f'Error reading file: {str(e)}'})
+            
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
     finally:
