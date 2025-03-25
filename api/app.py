@@ -572,24 +572,27 @@ def get_file_content(file_id):
         if not file_info:
             return jsonify({'success': False, 'message': 'File not found'})
         
-        # Convert datetime values to strings
+        # Convert upload_date to string format
         if file_info.get('upload_date'):
             file_info['upload_date'] = file_info['upload_date'].strftime('%Y-%m-%d %H:%M:%S')
         
         # Read and process file content
         try:
             if file_info['file_path'].endswith('.csv'):
-                df = pd.read_csv(file_info['file_path'])
+                df = pd.read_csv(file_info['file_path'], dtype=str)  # Read all columns as strings
             else:
-                df = pd.read_excel(file_info['file_path'])
+                df = pd.read_excel(file_info['file_path'], dtype=str)  # Read all columns as strings
             
-            # Convert all datetime columns to string format
+            # Replace NaN/None with empty string
+            df = df.fillna('')
+            
+            # Try to identify and format date columns
+            date_columns = ['DATEVACATED', 'DATE OF BIRTH', 'DATE LAST PROMOTION', 
+                          'DATE LAST INCREMENT', 'DATE OF LONGEVITY']
+            
             for col in df.columns:
-                if pd.api.types.is_datetime64_any_dtype(df[col]):
-                    df[col] = df[col].dt.strftime('%Y-%m-%d')
-                elif df[col].dtype == 'object':
-                    # Handle potential datetime strings
-                    df[col] = df[col].apply(lambda x: pd.to_datetime(x).strftime('%Y-%m-%d') if pd.notna(x) and isinstance(x, str) else x)
+                if col in date_columns:
+                    df[col] = df[col].apply(lambda x: format_date_string(x) if x else '')
             
             return jsonify({
                 'success': True,
@@ -597,14 +600,38 @@ def get_file_content(file_id):
                 'file_info': file_info
             })
         except Exception as e:
+            print(f"Error reading file: {str(e)}")  # Add debug logging
             return jsonify({'success': False, 'message': f'Error reading file: {str(e)}'})
             
     except Exception as e:
+        print(f"Error in get_file_content: {str(e)}")  # Add debug logging
         return jsonify({'success': False, 'message': str(e)})
     finally:
         if connection:
             cursor.close()
             connection.close()
+
+def format_date_string(date_str):
+    """Helper function to format date strings"""
+    if not date_str or not isinstance(date_str, str):
+        return ''
+    
+    date_str = date_str.strip()
+    if not date_str:
+        return ''
+    
+    try:
+        # Try different date formats
+        for fmt in ('%Y-%m-%d', '%m/%d/%Y', '%d/%m/%Y', '%m-%d-%Y', '%d-%m-%Y'):
+            try:
+                return datetime.strptime(date_str, fmt).strftime('%Y-%m-%d')
+            except ValueError:
+                continue
+        
+        # If no format matches, return the original string
+        return date_str
+    except Exception:
+        return date_str
 
 @app.route('/api/files/<int:file_id>/content', methods=['PUT'])
 def update_file_content(file_id):
