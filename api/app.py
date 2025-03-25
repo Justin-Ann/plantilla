@@ -442,26 +442,125 @@ def upload_file_with_month():
         return jsonify({'success': False, 'message': 'No file part'})
     
     file = request.files['file']
+    month_year = request.form.get('month_year')
+    
+    if not month_year:
+        return jsonify({'success': False, 'message': 'Month and year required'})
     
     if file.filename == '':
         return jsonify({'success': False, 'message': 'No selected file'})
     
     if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(file_path)
-        
         try:
-            # Process the uploaded file
+            # Generate unique filename
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            original_filename = secure_filename(file.filename)
+            filename = f"{timestamp}_{original_filename}"
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            
+            # Save file
+            file.save(file_path)
+            
+            # Save file metadata to database
+            connection = connect_to_database()
+            cursor = connection.cursor()
+            
+            insert_query = """
+            INSERT INTO uploaded_files 
+            (filename, original_filename, file_path, month_year, status, user_id)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            """
+            
+            cursor.execute(insert_query, (
+                filename,
+                original_filename,
+                file_path,
+                month_year,
+                'active',
+                1  # Default user_id
+            ))
+            
+            connection.commit()
+            
+            # Process the file
             success, message = process_raw_data(file_path)
+            
             if success:
                 return jsonify({'success': True, 'message': 'File uploaded and processed successfully'})
             else:
                 return jsonify({'success': False, 'message': message})
+                
         except Exception as e:
+            if connection:
+                connection.rollback()
             return jsonify({'success': False, 'message': str(e)})
+        finally:
+            if connection:
+                cursor.close()
+                connection.close()
     
     return jsonify({'success': False, 'message': 'Invalid file type'})
+
+@app.route('/api/files/<int:file_id>', methods=['DELETE'])
+def delete_file(file_id):
+    connection = connect_to_database()
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection failed'})
+    
+    try:
+        cursor = connection.cursor(dictionary=True)
+        
+        # Get file info
+        cursor.execute("SELECT * FROM uploaded_files WHERE id = %s", (file_id,))
+        file_info = cursor.fetchone()
+        
+        if not file_info:
+            return jsonify({'success': False, 'message': 'File not found'})
+        
+        # Soft delete by updating status
+        cursor.execute("""
+            UPDATE uploaded_files 
+            SET status = 'deleted' 
+            WHERE id = %s
+        """, (file_id,))
+        
+        connection.commit()
+        return jsonify({'success': True, 'message': 'File deleted successfully'})
+        
+    except Error as e:
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        if connection:
+            cursor.close()
+            connection.close()
+
+@app.route('/api/files/<int:file_id>', methods=['PUT'])
+def update_file(file_id):
+    data = request.json
+    
+    connection = connect_to_database()
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection failed'})
+    
+    try:
+        cursor = connection.cursor()
+        
+        update_query = """
+        UPDATE uploaded_files 
+        SET month_year = %s
+        WHERE id = %s
+        """
+        
+        cursor.execute(update_query, (data.get('month_year'), file_id))
+        connection.commit()
+        
+        return jsonify({'success': True, 'message': 'File updated successfully'})
+    except Error as e:
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        if connection:
+            cursor.close()
+            connection.close()
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

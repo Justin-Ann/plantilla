@@ -55,6 +55,8 @@ $(document).ready(function() {
         e.preventDefault();
         
         const formData = new FormData(this);
+        const monthYear = $('#month-picker').val();
+        formData.append('month_year', monthYear);
         
         // Show loading state
         const submitButton = $(this).find('button[type="submit"]');
@@ -70,6 +72,7 @@ $(document).ready(function() {
             success: function(response) {
                 if (response.success) {
                     alert('File uploaded successfully!');
+                    loadUploadedFiles(monthYear);
                     loadRawData();
                     loadCleanData();
                     loadDashboardCounts();
@@ -412,9 +415,8 @@ function editApplicant(id) {
     alert('Edit applicant functionality to be implemented');
 }
 
-
- // Load files for the selected month
- $('#load-files-btn').on('click', function() {
+// Load files for the selected month
+$('#load-files-btn').on('click', function() {
     const monthYear = $('#month-picker').val();
     loadUploadedFiles(monthYear);
 });
@@ -431,10 +433,11 @@ function loadUploadedFiles(monthYear) {
                 response.files.forEach(function(file) {
                     tableBody.append(`
                         <tr>
-                            <td>${file.filename}</td>
+                            <td>${file.original_filename}</td>
                             <td>${file.upload_date}</td>
                             <td>
                                 <button class="action-btn edit-btn" onclick="editFile(${file.id})">Edit</button>
+                                <button class="action-btn delete-btn" onclick="deleteFile(${file.id})">Delete</button>
                             </td>
                         </tr>
                     `);
@@ -449,7 +452,47 @@ function loadUploadedFiles(monthYear) {
     });
 }
 
-// Function to edit file (to be implemented)
+// Function to delete file
+function deleteFile(fileId) {
+    if (confirm('Are you sure you want to delete this file?')) {
+        $.ajax({
+            url: `${API_URL}/files/${fileId}`,
+            type: 'DELETE',
+            success: function(response) {
+                if (response.success) {
+                    alert('File deleted successfully!');
+                    loadUploadedFiles($('#month-picker').val());
+                } else {
+                    alert('Error: ' + response.message);
+                }
+            },
+            error: function() {
+                alert('Server error occurred.');
+            }
+        });
+    }
+}
+
+// Function to edit file
 function editFile(fileId) {
-    alert('Edit file functionality to be implemented');
+    const monthYear = prompt('Enter new month and year (YYYY-MM):');
+    if (monthYear) {
+        $.ajax({
+            url: `${API_URL}/files/${fileId}`,
+            type: 'PUT',
+            contentType: 'application/json',
+            data: JSON.stringify({ month_year: monthYear }),
+            success: function(response) {
+                if (response.success) {
+                    alert('File updated successfully!');
+                    loadUploadedFiles($('#month-picker').val());
+                } else {
+                    alert('Error: ' + response.message);
+                }
+            },
+            error: function() {
+                alert('Server error occurred.');
+            }
+        });
+    }
 }
