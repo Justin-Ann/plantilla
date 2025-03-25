@@ -575,11 +575,19 @@ def get_file_content(file_id):
         if not file_info:
             return jsonify({'success': False, 'message': 'File not found'})
         
+        # Convert upload_date to string format
+        file_info['upload_date'] = file_info['upload_date'].strftime('%Y-%m-%d %H:%M:%S')
+        
         # Read file content
         if file_info['file_path'].endswith('.csv'):
             df = pd.read_csv(file_info['file_path'])
         else:
             df = pd.read_excel(file_info['file_path'])
+        
+        # Convert any datetime columns to string format
+        for col in df.columns:
+            if pd.api.types.is_datetime64_any_dtype(df[col]):
+                df[col] = df[col].dt.strftime('%Y-%m-%d')
         
         return jsonify({
             'success': True,
@@ -627,6 +635,82 @@ def update_file_content(file_id):
             return jsonify({'success': False, 'message': message})
             
     except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        if connection:
+            cursor.close()
+            connection.close()
+
+# Add endpoint for getting applicant details
+@app.route('/api/applicants/<int:id>', methods=['GET'])
+def get_applicant(id):
+    try:
+        connection = connect_to_database()
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM applicants WHERE id = %s", (id,))
+        applicant = cursor.fetchone()
+        
+        if not applicant:
+            return jsonify({'success': False, 'message': 'Applicant not found'})
+        
+        # Convert dates to string format
+        date_fields = ['date_of_birth', 'date_last_promotion', 'date_last_increment', 'date_of_longevity']
+        for field in date_fields:
+            if applicant[field]:
+                applicant[field] = applicant[field].strftime('%Y-%m-%d')
+                
+        return jsonify({'success': True, 'data': applicant})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        if connection:
+            cursor.close()
+            connection.close()
+
+# Add endpoint for updating applicant
+@app.route('/api/applicants/<int:id>', methods=['PUT'])
+def update_applicant(id):
+    try:
+        data = request.json
+        connection = connect_to_database()
+        cursor = connection.cursor()
+        
+        update_query = """
+        UPDATE applicants SET 
+            fullname = %s,
+            sex = %s,
+            position_title = %s,
+            techcode = %s,
+            date_of_birth = %s,
+            date_last_promotion = %s,
+            date_last_increment = %s,
+            date_of_longevity = %s,
+            appointment_status = %s,
+            plantilla_no = %s
+        WHERE id = %s
+        """
+        
+        values = (
+            data.get('fullname'),
+            data.get('sex'),
+            data.get('position_title'),
+            data.get('techcode'),
+            data.get('date_of_birth') or None,
+            data.get('date_last_promotion') or None,
+            data.get('date_last_increment') or None,
+            data.get('date_of_longevity') or None,
+            data.get('appointment_status'),
+            data.get('plantilla_no') or None,
+            id
+        )
+        
+        cursor.execute(update_query, values)
+        connection.commit()
+        return jsonify({'success': True, 'message': 'Applicant updated successfully'})
+        
+    except Exception as e:
+        if connection:
+            connection.rollback()
         return jsonify({'success': False, 'message': str(e)})
     finally:
         if connection:

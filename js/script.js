@@ -186,16 +186,21 @@ $(document).ready(function() {
             plantilla_no: $('#plantilla-no').val() || null
         };
         
+        const id = $(this).data('edit-id');
+        const isEdit = !!id;
+        
         $.ajax({
-            url: `${API_URL}/applicants`,
-            type: 'POST',
+            url: `${API_URL}/applicants${isEdit ? `/${id}` : ''}`,
+            type: isEdit ? 'PUT' : 'POST',
             contentType: 'application/json',
             data: JSON.stringify(data),
             success: function(response) {
                 if (response.success) {
-                    alert('Applicant added successfully!');
+                    alert(isEdit ? 'Applicant updated successfully!' : 'Applicant added successfully!');
                     $('#applicant-modal').css('display', 'none');
                     $('#applicant-form')[0].reset();
+                    $('#applicant-form').removeData('edit-id');
+                    $('#applicant-form button[type="submit"]').text('Save Applicant');
                     loadApplicants();
                 } else {
                     alert('Error: ' + response.message);
@@ -413,8 +418,38 @@ function editRecord(id) {
 
 // Edit applicant
 function editApplicant(id) {
-    // Similar to editRecord, would fetch applicant details and populate a form
-    alert('Edit applicant functionality to be implemented');
+    $.ajax({
+        url: `${API_URL}/applicants/${id}`,
+        type: 'GET',
+        success: function(response) {
+            if (response.success) {
+                // Populate form with applicant data
+                const applicant = response.data;
+                $('#applicant-form').data('edit-id', id); // Store ID for update
+                $('#fullname').val(applicant.fullname);
+                $('#sex').val(applicant.sex);
+                $('#position-title').val(applicant.position_title);
+                $('#techcode').val(applicant.techcode);
+                $('#date-of-birth').val(applicant.date_of_birth);
+                $('#date-last-promotion').val(applicant.date_last_promotion);
+                $('#date-last-increment').val(applicant.date_last_increment);
+                $('#date-of-longevity').val(applicant.date_of_longevity);
+                $('#appointment-status').val(applicant.appointment_status);
+                $('#plantilla-no').val(applicant.plantilla_no);
+                
+                // Change form submit button text
+                $('#applicant-form button[type="submit"]').text('Update Applicant');
+                
+                // Show modal
+                $('#applicant-modal').css('display', 'block');
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function() {
+            alert('Server error occurred.');
+        }
+    });
 }
 
 // Load files for the selected month
