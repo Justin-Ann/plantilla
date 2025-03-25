@@ -1,7 +1,25 @@
+// Update API URL to match your server configuration
 const API_URL = 'http://localhost:5000';
 
-// script.js
+// Add server connectivity check
+function checkServerConnectivity() {
+    $.ajax({
+        url: `${API_URL}/health-check`,
+        type: 'GET',
+        timeout: 5000,
+        success: function(response) {
+            console.log('Server is running');
+        },
+        error: function() {
+            alert('Server is not running. Please ensure the server is started.');
+        }
+    });
+}
+
 $(document).ready(function() {
+    // Check server connectivity on page load
+    checkServerConnectivity();
+
     // Navigation
     $('.nav-menu a').on('click', function(e) {
         e.preventDefault();
@@ -32,7 +50,7 @@ $(document).ready(function() {
     loadApplicants();
     loadPlantillaOptions();
     
-    // Upload form submission
+    // Update upload form submission with better error handling
     $('#upload-form').on('submit', function(e) {
         e.preventDefault();
         
@@ -44,7 +62,7 @@ $(document).ready(function() {
         submitButton.prop('disabled', true).text('Uploading...');
         
         $.ajax({
-            url: `${API_URL}/api/upload`,
+            url: `${API_URL}/upload`,
             type: 'POST',
             data: formData,
             processData: false,
@@ -57,17 +75,22 @@ $(document).ready(function() {
                     loadDashboardCounts();
                     $('#upload-form')[0].reset();
                 } else {
-                    alert('Error: ' + (response.message || 'Unknown error occurred'));
+                    alert('Upload failed: ' + (response.message || 'Unknown error occurred'));
                 }
             },
             error: function(xhr, status, error) {
-                let errorMessage = 'Server error occurred.';
-                if (xhr.status === 405) {
-                    errorMessage = 'Upload method not allowed. Please check server configuration.';
+                let errorMessage = '';
+                if (xhr.status === 0) {
+                    errorMessage = 'Cannot connect to server. Please check if the server is running.';
+                } else if (xhr.status === 405) {
+                    errorMessage = 'Upload method not allowed. Please check API endpoint configuration.';
                 } else if (xhr.responseJSON && xhr.responseJSON.message) {
                     errorMessage = xhr.responseJSON.message;
+                } else {
+                    errorMessage = 'Server error occurred: ' + error;
                 }
                 alert(errorMessage);
+                console.error('Upload error:', {status: xhr.status, error: error, response: xhr.responseText});
             },
             complete: function() {
                 // Reset button state
@@ -180,10 +203,11 @@ $(document).ready(function() {
     });
 });
 
+// Update all other API calls to use the new API_URL
 // Load dashboard counts
 function loadDashboardCounts() {
     $.ajax({
-        url: `${API_URL}/api/clean-data`,
+        url: `${API_URL}/clean-data`,
         type: 'GET',
         success: function(response) {
             if (response.success) {
@@ -202,7 +226,7 @@ function loadDashboardCounts() {
 // Load raw data
 function loadRawData() {
     $.ajax({
-        url: `${API_URL}/api/raw-data`,
+        url: `${API_URL}/raw-data`,
         type: 'GET',
         success: function(response) {
             if (response.success) {
@@ -232,7 +256,7 @@ function loadRawData() {
 
 // Load clean data
 function loadCleanData(status = '') {
-    let url = `${API_URL}/api/clean-data`;
+    let url = `${API_URL}/clean-data`;
     if (status) {
         url += '?status=' + status;
     }
@@ -269,7 +293,7 @@ function loadCleanData(status = '') {
 // Load applicants
 function loadApplicants() {
     $.ajax({
-        url: `${API_URL}/api/applicants`,
+        url: `${API_URL}/applicants`,
         type: 'GET',
         success: function(response) {
             if (response.success) {
@@ -302,7 +326,7 @@ function loadApplicants() {
 // Search applicants
 function searchApplicants(term) {
     $.ajax({
-        url: `${API_URL}/api/applicants/search?term=` + term,
+        url: `${API_URL}/applicants/search?term=` + term,
         type: 'GET',
         success: function(response) {
             if (response.success) {
@@ -335,7 +359,7 @@ function searchApplicants(term) {
 // Load plantilla options for applicant form
 function loadPlantillaOptions() {
     $.ajax({
-        url: `${API_URL}/api/clean-data`,
+        url: `${API_URL}/clean-data`,
         type: 'GET',
         success: function(response) {
             if (response.success) {
@@ -355,7 +379,7 @@ function loadPlantillaOptions() {
 // Edit record
 function editRecord(id) {
     $.ajax({
-        url: `${API_URL}/api/clean-data`,
+        url: `${API_URL}/clean-data`,
         type: 'GET',
         success: function(response) {
             if (response.success) {
@@ -390,7 +414,7 @@ function editApplicant(id) {
 // Function to load uploaded files
 function loadUploadedFiles(monthYear) {
     $.ajax({
-        url: `${API_URL}/api/uploaded-files?month_year=${monthYear}`,
+        url: `${API_URL}/uploaded-files?month_year=${monthYear}`,
         type: 'GET',
         success: function(response) {
             if (response.success) {
