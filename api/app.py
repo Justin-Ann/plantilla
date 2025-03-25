@@ -82,7 +82,7 @@ def home():
 def serve_static(path):
     # This will serve files from the static folder (HTML, CSS, JS)
     return app.send_static_file(path)
-
+ 
 '''@app.route('/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
@@ -110,7 +110,8 @@ def upload_file():
     except Exception as e:
         return jsonify({"error": str(e)}), 500'''
 
-@app.route('/upload', methods=['POST'])
+#wo report
+'''@app.route('/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
         return jsonify({"error": "No file uploaded"}), 400
@@ -141,8 +142,77 @@ def upload_file():
         return jsonify(processed_data)
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": str(e)}), 500'''
 
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    if 'file' not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+    
+    file = request.files['file']
+    
+    if file.filename == '':
+        return jsonify({"error": "No selected file"}), 400
+    
+    if not allowed_file(file.filename):
+        return jsonify({"error": "Invalid file format. Only CSV, XLS, and XLSX are allowed."}), 400
+
+    filename = secure_filename(file.filename)
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    file.save(file_path)
+
+    try:
+        if filename.endswith('.csv'):
+            df = pd.read_csv(file_path)
+        else:
+            df = pd.read_excel(file_path)
+
+        # Replace NaN values with None (NULL in MySQL)
+        df = df.where(pd.notna(df), None)
+
+        # Convert all columns to string to avoid accidental NaN issues
+        df = df.astype(str)
+
+        processed_data = process_raw_data(df)
+
+        # Store file metadata in the database
+        connection = connect_to_database()
+        if connection:
+            cursor = connection.cursor()
+            month_year = datetime.now().strftime('%Y-%m')
+            user_id = 1  # Replace with actual user ID from session
+            cursor.execute("""
+                INSERT INTO uploaded_files (filename, month_year, user_id)
+                VALUES (%s, %s, %s)
+            """, (filename, month_year, user_id))
+            connection.commit()
+            cursor.close()
+            connection.close()
+
+        return jsonify(processed_data)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+#newly added route for getting uploaded files
+@app.route('/api/uploaded-files', methods=['GET'])
+def get_uploaded_files():
+    month_year = request.args.get('month_year')
+    connection = connect_to_database()
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection failed'})
+    
+    try:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM uploaded_files WHERE month_year = %s", (month_year,))
+        files = cursor.fetchall()
+        cursor.close()
+        connection.close()
+        return jsonify({'success': True, 'files': files})
+    except Error as e:
+        if connection:
+            connection.close()
+        return jsonify({'success': False, 'message': f'Database error: {str(e)}'})
 
 @app.route('/api/upload', methods=['POST'])
 def api_upload_file():

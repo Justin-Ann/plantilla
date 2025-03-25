@@ -99,3 +99,12 @@ HAVING COUNT(*) > 1;
 
 ALTER TABLE applicants MODIFY COLUMN plantilla_no VARCHAR(50) NULL;
 ALTER TABLE applicants DROP FOREIGN KEY applicants_ibfk_1;
+
+CREATE TABLE uploaded_files (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    filename VARCHAR(255),
+    upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    month_year VARCHAR(7), -- Format: YYYY-MM
+    user_id INT,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);

@@ -363,3 +363,45 @@ function editApplicant(id) {
     // Similar to editRecord, would fetch applicant details and populate a form
     alert('Edit applicant functionality to be implemented');
 }
+
+
+ // Load files for the selected month
+ $('#load-files-btn').on('click', function() {
+    const monthYear = $('#month-picker').val();
+    loadUploadedFiles(monthYear);
+});
+
+// Function to load uploaded files
+function loadUploadedFiles(monthYear) {
+    $.ajax({
+        url: `${API_URL}/api/uploaded-files?month_year=${monthYear}`,
+        type: 'GET',
+        success: function(response) {
+            if (response.success) {
+                const tableBody = $('#uploaded-files-table tbody');
+                tableBody.empty();
+                response.files.forEach(function(file) {
+                    tableBody.append(`
+                        <tr>
+                            <td>${file.filename}</td>
+                            <td>${file.upload_date}</td>
+                            <td>
+                                <button class="action-btn edit-btn" onclick="editFile(${file.id})">Edit</button>
+                            </td>
+                        </tr>
+                    `);
+                });
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function() {
+            alert('Server error occurred.');
+        }
+    });
+}
+
+// Function to edit file (to be implemented)
+function editFile(fileId) {
+    alert('Edit file functionality to be implemented');
+}
