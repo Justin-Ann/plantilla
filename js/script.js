@@ -38,6 +38,11 @@ $(document).ready(function() {
         
         const formData = new FormData(this);
         
+        // Show loading state
+        const submitButton = $(this).find('button[type="submit"]');
+        const originalText = submitButton.text();
+        submitButton.prop('disabled', true).text('Uploading...');
+        
         $.ajax({
             url: `${API_URL}/api/upload`,
             type: 'POST',
@@ -50,12 +55,23 @@ $(document).ready(function() {
                     loadRawData();
                     loadCleanData();
                     loadDashboardCounts();
+                    $('#upload-form')[0].reset();
                 } else {
-                    alert('Error: ' + response.message);
+                    alert('Error: ' + (response.message || 'Unknown error occurred'));
                 }
             },
-            error: function() {
-                alert('Server error occurred.');
+            error: function(xhr, status, error) {
+                let errorMessage = 'Server error occurred.';
+                if (xhr.status === 405) {
+                    errorMessage = 'Upload method not allowed. Please check server configuration.';
+                } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                }
+                alert(errorMessage);
+            },
+            complete: function() {
+                // Reset button state
+                submitButton.prop('disabled', false).text(originalText);
             }
         });
     });
