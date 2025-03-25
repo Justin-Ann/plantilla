@@ -144,7 +144,7 @@ def upload_file():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route('/api/upload', methods=['POST'])
+@app.route('/api/upload-basic', methods=['POST'])
 def api_upload_file():
     if 'file' not in request.files:
         return jsonify({'success': False, 'message': 'No file part'})
@@ -426,8 +426,8 @@ def get_uploaded_files():
             connection.close()
         return jsonify({'success': False, 'message': f'Database error: {str(e)}'})
 
-@app.route('/api/upload', methods=['POST'])
-def upload_file():
+@app.route('/api/upload-with-month', methods=['POST'])
+def upload_file_with_month():
     if 'file' not in request.files:
         return jsonify({'success': False, 'message': 'No file part'})
     
