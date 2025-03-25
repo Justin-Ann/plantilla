@@ -370,6 +370,47 @@ input[type="month"] {
     border-radius: 4px;
 }
 
+/* File Editor Styles */
+.file-editor-toolbar {
+    padding: 10px;
+    background: #f5f5f5;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 10px;
+}
+
+.file-editor-search {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.file-editor-search input {
+    flex: 1;
+    min-width: 200px;
+}
+
+#file-editor-modal .modal-content {
+    width: 95%;
+    height: 90vh;
+    margin: 2.5vh auto;
+}
+
+#file-editor-grid {
+    height: calc(90vh - 150px);
+    overflow: auto;
+}
+
+.editor-cell-select {
+    width: 100%;
+    padding: 5px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+.highlight {
+    background-color: #fff3cd;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .container {
