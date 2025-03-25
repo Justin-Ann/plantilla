@@ -103,8 +103,11 @@ ALTER TABLE applicants DROP FOREIGN KEY applicants_ibfk_1;
 CREATE TABLE uploaded_files (
     id INT AUTO_INCREMENT PRIMARY KEY,
     filename VARCHAR(255),
+    original_filename VARCHAR(255),
+    file_path VARCHAR(255),
     upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    month_year VARCHAR(7), -- Format: YYYY-MM
+    month_year VARCHAR(7),  -- Format: YYYY-MM
+    status VARCHAR(20) DEFAULT 'active',
     user_id INT,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );

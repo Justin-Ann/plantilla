@@ -349,6 +349,27 @@ tr:hover {
     margin-top: 5px;
 }
 
+/* Monthly Summary */
+.monthly-summary {
+    background-color: var(--light-color);
+    padding: 20px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-top: 30px;
+}
+
+.month-picker {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+input[type="month"] {
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .container {
@@ -370,6 +391,10 @@ tr:hover {
     }
     
     .form-row {
+        flex-direction: column;
+    }
+
+    .month-picker {
         flex-direction: column;
     }
 }
