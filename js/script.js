@@ -1,5 +1,5 @@
 // Update API URL to match your server configuration
-const API_URL = 'http://localhost:5000';
+const API_URL = 'http://localhost:5000/api';
 
 // Add server connectivity check
 function checkServerConnectivity() {
@@ -62,7 +62,7 @@ $(document).ready(function() {
         submitButton.prop('disabled', true).text('Uploading...');
         
         $.ajax({
-            url: `${API_URL}/upload`,
+            url: `${API_URL}/upload-with-month`,  // Updated endpoint
             type: 'POST',
             data: formData,
             processData: false,
