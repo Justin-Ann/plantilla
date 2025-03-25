@@ -619,3 +619,144 @@ function showEditor(cell, type, currentValue) {
                 select.focus();
             }
         }
+
+function showFileEditor(fileId, data, fileInfo) {
+    if (!data || !Array.isArray(data) || data.length === 0) {
+        alert('No valid data to edit');
+        return;
+    }
+
+    // Remove existing modal if it exists
+    $('#file-editor-modal').remove();
+
+    // Create new modal
+    const modalHtml = `
+        <div id="file-editor-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Edit File: ${fileInfo.original_filename}</h2>
+                <div class="file-editor-toolbar">
+                    <div class="file-editor-search">
+                        <input type="text" id="file-search" placeholder="Search in file...">
+                        <button class="action-btn" onclick="searchInFile()">Search</button>
+                        <button class="action-btn" onclick="clearSearch()">Clear</button>
+                    </div>
+                </div>
+                <div id="file-editor-grid">
+                    <table id="file-editor-table" class="data-table">
+                        <thead></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <button id="save-file-changes" class="action-btn">Save Changes</button>
+            </div>
+        </div>
+    `;
+
+    $('body').append(modalHtml);
+
+    const modal = $('#file-editor-modal');
+    const table = $('#file-editor-table');
+    
+    try {
+        // Get headers and initialize table
+        const headers = Object.keys(data[0]);
+        const headerRow = $('<tr>');
+        headers.forEach(header => {
+            headerRow.append(`<th>${header}</th>`);
+        });
+        table.find('thead').append(headerRow);
+
+        // Add data rows with appropriate editors
+        data.forEach(row => {
+            const tableRow = $('<tr>');
+            headers.forEach(header => {
+                const cell = $('<td>');
+                const value = row[header] !== null ? row[header] : '';
+                cell.text(value);
+
+                // Add click handler
+                cell.on('click', function(e) {
+                    e.stopPropagation();
+                    const currentValue = $(this).text().trim();
+                    let editorType;
+
+                    // Determine editor type based on header and content
+                    if (header.toLowerCase().includes('sg')) {
+                        editorType = 'sg';
+                    } else if (header.toLowerCase().includes('step')) {
+                        editorType = 'step';
+                    } else if (header.toLowerCase().includes('level')) {
+                        editorType = 'level';
+                    } else if (header.toLowerCase().includes('sex')) {
+                        editorType = 'sex';
+                    } else if (header.toLowerCase().includes('status')) {
+                        editorType = 'status';
+                    } else if (header.toLowerCase().includes('date')) {
+                        editorType = 'date';
+                    } else if (header.toLowerCase().includes('salary') || 
+                             header.toLowerCase().includes('wage') ||
+                             header.toLowerCase().includes('pay')) {
+                        editorType = 'salary';
+                    }
+
+                    if (editorType) {
+                        showEditor($(this), editorType, currentValue);
+                    } else {
+                        // Make regular cell editable
+                        $(this).attr('contenteditable', 'true').focus();
+                    }
+                });
+
+                tableRow.append(cell);
+            });
+            table.find('tbody').append(tableRow);
+        });
+
+        // Handle save
+        $('#save-file-changes').off('click').on('click', function() {
+            const updatedData = [];
+            table.find('tbody tr').each(function() {
+                const row = {};
+                $(this).find('td').each(function(i) {
+                    const header = headers[i];
+                    row[header] = $(this).text().trim();
+                });
+                updatedData.push(row);
+            });
+
+            // Save changes
+            $.ajax({
+                url: `${API_URL}/files/${fileId}/content`,
+                type: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify({ content: updatedData }),
+                success: function(response) {
+                    if (response.success) {
+                        alert('File updated successfully!');
+                        modal.css('display', 'none');
+                        loadUploadedFiles($('#month-picker').val());
+                    } else {
+                        alert('Error: ' + response.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Save error:', xhr.responseText);
+                    alert('Error saving changes: ' + error);
+                }
+            });
+        });
+
+        // Close button handler
+        modal.find('.close').on('click', function() {
+            modal.css('display', 'none');
+        });
+
+        // Show modal
+        modal.css('display', 'block');
+
+    } catch (error) {
+        console.error('Error building table:', error);
+        alert('Error building table: ' + error.message);
+    }
+}
