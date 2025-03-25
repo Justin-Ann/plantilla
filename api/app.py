@@ -112,36 +112,46 @@ def upload_file():
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
-    if 'file' not in request.files:
-        return jsonify({"error": "No file uploaded"}), 400
-    
-    file = request.files['file']
-    
-    if file.filename == '':
-        return jsonify({"error": "No selected file"}), 400
-    
-    if not allowed_file(file.filename):
-        return jsonify({"error": "Invalid file format. Only CSV, XLS, and XLSX are allowed."}), 400
-
-    filename = secure_filename(file.filename)
-
     try:
-        if filename.endswith('.csv'):
-            df = pd.read_csv(file)
-        else:
-            df = pd.read_excel(file)
+        if 'file' not in request.files:
+            return jsonify({"success": False, "message": "No file uploaded"}), 400
+        
+        file = request.files['file']
+        
+        if file.filename == '':
+            return jsonify({"success": False, "message": "No selected file"}), 400
+        
+        if not allowed_file(file.filename):
+            return jsonify({"success": False, "message": "Invalid file format. Only CSV, XLS, and XLSX are allowed."}), 400
 
-        # 🔴 FIX: Replace NaN values with None (NULL in MySQL)
-        df = df.where(pd.notna(df), None)
-
-        # 🔴 FIX: Convert all columns to string to avoid accidental NaN issues
-        df = df.astype(str)
-
-        processed_data = process_raw_data(df)
-        return jsonify(processed_data)
-
+        filename = secure_filename(file.filename)
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        
+        # Save the file first
+        file.save(file_path)
+        
+        try:
+            # Process the saved file
+            success, message = process_raw_data(file_path)
+            
+            if success:
+                return jsonify({"success": True, "message": message})
+            else:
+                return jsonify({"success": False, "message": message}), 400
+                
+        except Exception as e:
+            print(f"Error processing file: {str(e)}")
+            return jsonify({
+                "success": False, 
+                "message": f"Error processing file: {str(e)}"
+            }), 500
+            
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print(f"Upload error: {str(e)}")
+        return jsonify({
+            "success": False,
+            "message": f"Upload error: {str(e)}"
+        }), 500
 
 
 @app.route('/api/upload-basic', methods=['POST'])

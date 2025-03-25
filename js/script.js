@@ -75,25 +75,33 @@ $(document).ready(function() {
                     loadDashboardCounts();
                     $('#upload-form')[0].reset();
                 } else {
-                    alert('Upload failed: ' + (response.message || 'Unknown error occurred'));
+                    alert('Upload failed: ' + (response.message || response.error || 'Unknown error occurred'));
+                    console.error('Upload error details:', response);
                 }
             },
             error: function(xhr, status, error) {
                 let errorMessage = '';
-                if (xhr.status === 0) {
-                    errorMessage = 'Cannot connect to server. Please check if the server is running.';
-                } else if (xhr.status === 405) {
-                    errorMessage = 'Upload method not allowed. Please check API endpoint configuration.';
-                } else if (xhr.responseJSON && xhr.responseJSON.message) {
-                    errorMessage = xhr.responseJSON.message;
-                } else {
-                    errorMessage = 'Server error occurred: ' + error;
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    errorMessage = response.message || response.error || error;
+                } catch(e) {
+                    if (xhr.status === 0) {
+                        errorMessage = 'Cannot connect to server. Please check if the server is running.';
+                    } else if (xhr.status === 405) {
+                        errorMessage = 'Upload method not allowed. Please check API endpoint configuration.';
+                    } else {
+                        errorMessage = 'Server error occurred: ' + error;
+                    }
                 }
                 alert(errorMessage);
-                console.error('Upload error:', {status: xhr.status, error: error, response: xhr.responseText});
+                console.error('Upload error:', {
+                    status: xhr.status,
+                    error: error,
+                    response: xhr.responseText,
+                    details: xhr.getAllResponseHeaders()
+                });
             },
             complete: function() {
-                // Reset button state
                 submitButton.prop('disabled', false).text(originalText);
             }
         });
