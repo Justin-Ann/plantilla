@@ -544,7 +544,7 @@ function showFileEditor(fileId, data, fileInfo) {
     if (!$('#file-editor-modal').length) {
         $('body').append(`
             <div id="file-editor-modal" class="modal">
-                <div class="modal-content">
+                <div class="modal-content" style="width: 95%; height: 90vh; margin: 2.5vh auto;">
                     <span class="close">&times;</span>
                     <h2>Edit File: ${fileInfo.original_filename}</h2>
                     <div class="file-editor-toolbar">
@@ -554,7 +554,7 @@ function showFileEditor(fileId, data, fileInfo) {
                             <button class="action-btn" onclick="clearSearch()">Clear</button>
                         </div>
                     </div>
-                    <div id="file-editor-grid">
+                    <div id="file-editor-grid" style="height: calc(90vh - 150px); overflow: auto;">
                         <table id="file-editor-table" class="data-table">
                             <thead></thead>
                             <tbody></tbody>
@@ -564,11 +564,6 @@ function showFileEditor(fileId, data, fileInfo) {
                 </div>
             </div>
         `);
-
-        // Add close button handler
-        $('#file-editor-modal .close').on('click', function() {
-            $('#file-editor-modal').css('display', 'none');
-        });
     }
 
     const modal = $('#file-editor-modal');
@@ -578,7 +573,6 @@ function showFileEditor(fileId, data, fileInfo) {
     table.find('thead, tbody').empty();
     
     try {
-        // Add headers
         const headers = Object.keys(data[0]);
         const headerRow = $('<tr>');
         headers.forEach(header => {
@@ -586,46 +580,81 @@ function showFileEditor(fileId, data, fileInfo) {
         });
         table.find('thead').append(headerRow);
         
-        // Add data rows with enhanced cell editors
+        // Add data rows with cell-specific editors
         data.forEach(row => {
             const tableRow = $('<tr>');
             headers.forEach(header => {
                 const cell = $('<td>');
                 const value = row[header] !== null ? row[header] : '';
+                cell.text(value);
+
+                // Add click handler to show appropriate editor
+                cell.on('click', function(e) {
+                    const currentValue = $(this).text();
+                    
+                    // Remove any existing editor
+                    $(this).find('select, input').remove();
+                    
+                    // Create appropriate editor based on column name
+                    if (header.toLowerCase().includes('sex')) {
+                        const select = $('<select>')
+                            .addClass('editor-cell-select')
+                            .append('<option value="Male">Male</option>')
+                            .append('<option value="Female">Female</option>')
+                            .append('<option value="Others">Others</option>')
+                            .val(currentValue);
+                        
+                        select.on('change blur', function() {
+                            cell.text($(this).val());
+                            $(this).remove();
+                        });
+                        
+                        cell.empty().append(select);
+                        select.focus();
+                    } 
+                    else if (header.toLowerCase().includes('date')) {
+                        const input = $('<input>')
+                            .attr({
+                                type: 'date',
+                                value: currentValue
+                            })
+                            .addClass('editor-cell-select');
+                        
+                        input.on('change blur', function() {
+                            cell.text($(this).val());
+                            $(this).remove();
+                        });
+                        
+                        cell.empty().append(input);
+                        input.focus();
+                    }
+                    else if (header.toLowerCase().includes('status')) {
+                        const select = $('<select>')
+                            .addClass('editor-cell-select')
+                            .append('<option value="Active">Active</option>')
+                            .append('<option value="Inactive">Inactive</option>')
+                            .append('<option value="Pending">Pending</option>')
+                            .val(currentValue);
+                        
+                        select.on('change blur', function() {
+                            cell.text($(this).val());
+                            $(this).remove();
+                        });
+                        
+                        cell.empty().append(select);
+                        select.focus();
+                    }
+                    else {
+                        // Make cell editable on click if not using a special editor
+                        cell.attr('contenteditable', 'true').focus();
+                    }
+                });
                 
-                // Add appropriate editor based on column name and content
-                if (header.toLowerCase().includes('sex')) {
-                    // Sex dropdown
-                    const select = $('<select>').addClass('editor-cell-select')
-                        .append('<option value="Male">Male</option>')
-                        .append('<option value="Female">Female</option>')
-                        .append('<option value="Others">Others</option>')
-                        .val(value);
-                    cell.append(select);
-                } else if (header.toLowerCase().includes('date')) {
-                    // Date picker
-                    const input = $('<input>').attr({
-                        type: 'date',
-                        value: value
-                    }).addClass('editor-cell-select');
-                    cell.append(input);
-                } else if (header.toLowerCase().includes('status')) {
-                    // Status dropdown
-                    const select = $('<select>').addClass('editor-cell-select')
-                        .append('<option value="Active">Active</option>')
-                        .append('<option value="Inactive">Inactive</option>')
-                        .append('<option value="Pending">Pending</option>')
-                        .val(value);
-                    cell.append(select);
-                } else {
-                    // Regular editable cell
-                    cell.attr('contenteditable', 'true').text(value);
-                }
                 tableRow.append(cell);
             });
             table.find('tbody').append(tableRow);
         });
-        
+
         // Handle save changes
         $('#save-file-changes').off('click').on('click', function() {
             const updatedData = [];
