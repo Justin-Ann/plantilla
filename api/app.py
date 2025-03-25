@@ -237,43 +237,40 @@ def get_clean_data():
 
 @app.route('/api/clean-data/<int:id>', methods=['PUT'])
 def update_clean_data(id):
-    data = request.json
-    
-    connection = connect_to_database()
-    if not connection:
-        return jsonify({'success': False, 'message': 'Database connection failed'})
-    
     try:
+        data = request.json
+        connection = connect_to_database()
+        if not connection:
+            return jsonify({'success': False, 'message': 'Database connection failed'})
+        
         cursor = connection.cursor()
         
         update_query = """
-        UPDATE clean_data SET 
-            remarks = %s,
+        UPDATE clean_data 
+        SET remarks = %s,
             date_published = %s,
             status = %s
         WHERE id = %s
         """
         
-        date_published = None
-        if 'date_published' in data and data['date_published']:
-            date_published = data['date_published']
-        
         cursor.execute(update_query, (
             data.get('remarks'),
-            date_published,
+            data.get('date_published'),
             data.get('status'),
             id
         ))
         
         connection.commit()
-        cursor.close()
-        connection.close()
+        return jsonify({'success': True, 'message': 'Record updated successfully'})
         
-        return jsonify({'success': True, 'message': 'Data updated successfully'})
-    except Error as e:
+    except Exception as e:
         if connection:
+            connection.rollback()
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        if connection:
+            cursor.close()
             connection.close()
-        return jsonify({'success': False, 'message': f'Database error: {str(e)}'})
 
 @app.route('/api/applicants', methods=['GET'])
 def get_applicants():
@@ -337,45 +334,47 @@ def search_applicants():
 
 @app.route('/api/applicants', methods=['POST'])
 def add_applicant():
-    data = request.json
-    
-    connection = connect_to_database()
-    if not connection:
-        return jsonify({'success': False, 'message': 'Database connection failed'})
-    
     try:
+        data = request.json
+        connection = connect_to_database()
+        if not connection:
+            return jsonify({'success': False, 'message': 'Database connection failed'})
+        
         cursor = connection.cursor()
         
         insert_query = """
         INSERT INTO applicants (
-            fullname, sex, position_title, techcode, date_of_birth,
-            date_last_promotion, date_last_increment, date_of_longevity,
-            appointment_status, plantilla_no
+            fullname, sex, position_title, techcode,
+            date_of_birth, date_last_promotion, date_last_increment,
+            date_of_longevity, appointment_status, plantilla_no
         ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         
-        cursor.execute(insert_query, (
+        values = (
             data.get('fullname'),
             data.get('sex'),
             data.get('position_title'),
             data.get('techcode'),
-            data.get('date_of_birth'),
-            data.get('date_last_promotion'),
-            data.get('date_last_increment'),
-            data.get('date_of_longevity'),
+            data.get('date_of_birth') or None,
+            data.get('date_last_promotion') or None,
+            data.get('date_last_increment') or None,
+            data.get('date_of_longevity') or None,
             data.get('appointment_status'),
-            data.get('plantilla_no')
-        ))
+            data.get('plantilla_no') or None
+        )
         
+        cursor.execute(insert_query, values)
         connection.commit()
-        cursor.close()
-        connection.close()
-        
         return jsonify({'success': True, 'message': 'Applicant added successfully'})
-    except Error as e:
+        
+    except Exception as e:
         if connection:
+            connection.rollback()
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        if connection:
+            cursor.close()
             connection.close()
-        return jsonify({'success': False, 'message': f'Database error: {str(e)}'})
 
 @app.route('/api/export-clean-data', methods=['GET'])
 def export_clean_data():
@@ -556,6 +555,78 @@ def update_file(file_id):
         
         return jsonify({'success': True, 'message': 'File updated successfully'})
     except Error as e:
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        if connection:
+            cursor.close()
+            connection.close()
+
+@app.route('/api/files/<int:file_id>/content', methods=['GET'])
+def get_file_content(file_id):
+    connection = connect_to_database()
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection failed'})
+    
+    try:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM uploaded_files WHERE id = %s", (file_id,))
+        file_info = cursor.fetchone()
+        
+        if not file_info:
+            return jsonify({'success': False, 'message': 'File not found'})
+        
+        # Read file content
+        if file_info['file_path'].endswith('.csv'):
+            df = pd.read_csv(file_info['file_path'])
+        else:
+            df = pd.read_excel(file_info['file_path'])
+        
+        return jsonify({
+            'success': True,
+            'data': df.to_dict('records'),
+            'file_info': file_info
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        if connection:
+            cursor.close()
+            connection.close()
+
+@app.route('/api/files/<int:file_id>/content', methods=['PUT'])
+def update_file_content(file_id):
+    connection = connect_to_database()
+    if not connection:
+        return jsonify({'success': False, 'message': 'Database connection failed'})
+    
+    try:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM uploaded_files WHERE id = %s", (file_id,))
+        file_info = cursor.fetchone()
+        
+        if not file_info:
+            return jsonify({'success': False, 'message': 'File not found'})
+        
+        # Get updated content
+        data = request.json
+        df = pd.DataFrame(data['content'])
+        
+        # Save updated content
+        if file_info['file_path'].endswith('.csv'):
+            df.to_csv(file_info['file_path'], index=False)
+        else:
+            df.to_excel(file_info['file_path'], index=False)
+        
+        # Reprocess the updated file
+        success, message = process_raw_data(file_info['file_path'])
+        
+        if success:
+            return jsonify({'success': True, 'message': 'File updated and processed successfully'})
+        else:
+            return jsonify({'success': False, 'message': message})
+            
+    except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
     finally:
         if connection:

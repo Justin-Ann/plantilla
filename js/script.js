@@ -143,12 +143,12 @@ $(document).ready(function() {
         const id = $('#edit-id').val();
         const data = {
             remarks: $('#edit-remarks').val(),
-            date_published: $('#edit-date-published').val(),
+            date_published: $('#edit-date-published').val() || null,
             status: $('#edit-status').val()
         };
         
         $.ajax({
-            url: `${API_URL}/api/clean-data/` + id,
+            url: `${API_URL}/clean-data/${id}`,
             type: 'PUT',
             contentType: 'application/json',
             data: JSON.stringify(data),
@@ -162,8 +162,9 @@ $(document).ready(function() {
                     alert('Error: ' + response.message);
                 }
             },
-            error: function() {
-                alert('Server error occurred.');
+            error: function(xhr, status, error) {
+                alert('Server error occurred: ' + error);
+                console.error('Error details:', xhr.responseText);
             }
         });
     });
@@ -177,16 +178,16 @@ $(document).ready(function() {
             sex: $('#sex').val(),
             position_title: $('#position-title').val(),
             techcode: $('#techcode').val(),
-            date_of_birth: $('#date-of-birth').val(),
-            date_last_promotion: $('#date-last-promotion').val(),
-            date_last_increment: $('#date-last-increment').val(),
-            date_of_longevity: $('#date-of-longevity').val(),
+            date_of_birth: $('#date-of-birth').val() || null,
+            date_last_promotion: $('#date-last-promotion').val() || null,
+            date_last_increment: $('#date-last-increment').val() || null,
+            date_of_longevity: $('#date-of-longevity').val() || null,
             appointment_status: $('#appointment-status').val(),
-            plantilla_no: $('#plantilla-no').val()
+            plantilla_no: $('#plantilla-no').val() || null
         };
         
         $.ajax({
-            url: `${API_URL}/api/applicants`,
+            url: `${API_URL}/applicants`,
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify(data),
@@ -200,8 +201,9 @@ $(document).ready(function() {
                     alert('Error: ' + response.message);
                 }
             },
-            error: function() {
-                alert('Server error occurred.');
+            error: function(xhr, status, error) {
+                alert('Server error occurred: ' + error);
+                console.error('Error details:', xhr.responseText);
             }
         });
     });
@@ -475,16 +477,89 @@ function deleteFile(fileId) {
 
 // Function to edit file
 function editFile(fileId) {
-    const monthYear = prompt('Enter new month and year (YYYY-MM):');
-    if (monthYear) {
+    // First, get the file content
+    $.ajax({
+        url: `${API_URL}/files/${fileId}/content`,
+        type: 'GET',
+        success: function(response) {
+            if (response.success) {
+                // Show file editor modal
+                showFileEditor(fileId, response.data, response.file_info);
+            } else {
+                alert('Error: ' + response.message);
+            }
+        },
+        error: function() {
+            alert('Server error occurred.');
+        }
+    });
+}
+
+function showFileEditor(fileId, data, fileInfo) {
+    // Create modal for file editing if it doesn't exist
+    if (!$('#file-editor-modal').length) {
+        $('body').append(`
+            <div id="file-editor-modal" class="modal">
+                <div class="modal-content" style="width: 90%; max-width: none;">
+                    <span class="close">&times;</span>
+                    <h2>Edit File</h2>
+                    <div id="file-editor-grid" style="height: 500px; overflow: auto;">
+                        <table id="file-editor-table" class="data-table">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <button id="save-file-changes" class="action-btn">Save Changes</button>
+                </div>
+            </div>
+        `);
+    }
+
+    const modal = $('#file-editor-modal');
+    const table = $('#file-editor-table');
+    
+    // Clear existing content
+    table.find('thead').empty();
+    table.find('tbody').empty();
+    
+    // Add headers
+    const headers = Object.keys(data[0]);
+    const headerRow = $('<tr>');
+    headers.forEach(header => {
+        headerRow.append(`<th>${header}</th>`);
+    });
+    table.find('thead').append(headerRow);
+    
+    // Add data rows
+    data.forEach(row => {
+        const tableRow = $('<tr>');
+        headers.forEach(header => {
+            tableRow.append(`<td contenteditable="true">${row[header] || ''}</td>`);
+        });
+        table.find('tbody').append(tableRow);
+    });
+    
+    // Handle save
+    $('#save-file-changes').off('click').on('click', function() {
+        const updatedData = [];
+        table.find('tbody tr').each(function() {
+            const row = {};
+            $(this).find('td').each(function(i) {
+                row[headers[i]] = $(this).text();
+            });
+            updatedData.push(row);
+        });
+        
+        // Save changes
         $.ajax({
-            url: `${API_URL}/files/${fileId}`,
+            url: `${API_URL}/files/${fileId}/content`,
             type: 'PUT',
             contentType: 'application/json',
-            data: JSON.stringify({ month_year: monthYear }),
+            data: JSON.stringify({ content: updatedData }),
             success: function(response) {
                 if (response.success) {
                     alert('File updated successfully!');
+                    modal.css('display', 'none');
                     loadUploadedFiles($('#month-picker').val());
                 } else {
                     alert('Error: ' + response.message);
@@ -494,5 +569,7 @@ function editFile(fileId) {
                 alert('Server error occurred.');
             }
         });
-    }
+    });
+    
+    modal.css('display', 'block');
 }
