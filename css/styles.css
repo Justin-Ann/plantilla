@@ -390,14 +390,39 @@ input[type="month"] {
 }
 
 #file-editor-modal .modal-content {
-    width: 95%;
-    height: 90vh;
-    margin: 2.5vh auto;
+    width: 98%;
+    height: 96vh;
+    margin: 1vh auto;
+    padding: 15px;
 }
 
 #file-editor-grid {
-    height: calc(90vh - 150px);
-    overflow: auto;
+    height: calc(96vh - 120px);
+}
+
+/* Improve dropdown positioning */
+.edit-dropdown {
+    position: absolute;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    width: auto;
+    min-width: 100px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+.edit-dropdown select {
+    width: 100%;
+    border: none;
+    padding: 5px;
+}
+
+td.editing {
+    position: relative;
+    padding: 0 !important;
 }
 
 .editor-cell-select {

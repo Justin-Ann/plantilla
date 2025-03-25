@@ -534,197 +534,88 @@ function editFile(fileId) {
     });
 }
 
-function showFileEditor(fileId, data, fileInfo) {
-    if (!data || !Array.isArray(data) || data.length === 0) {
-        alert('No valid data to edit');
-        return;
+function createDropdownOptions(type) {
+    switch(type) {
+        case 'sg':
+            return Array.from({length: 100}, (_, i) => `<option value="${i+1}">SG ${i+1}</option>`).join('');
+        case 'step':
+            return Array.from({length: 10}, (_, i) => `<option value="${i+1}">Step ${i+1}</option>`).join('');
+        case 'level':
+            return Array.from({length: 10}, (_, i) => `<option value="${i+1}">Level ${i+1}</option>`).join('');
+        case 'sex':
+            return `
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Others">Others</option>
+            `;
+        case 'status':
+            return `
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+                <option value="Pending">Pending</option>
+            `;
+        default:
+            return '';
     }
+}
 
-    // Create modal for file editing if it doesn't exist
-    if (!$('#file-editor-modal').length) {
-        $('body').append(`
-            <div id="file-editor-modal" class="modal">
-                <div class="modal-content" style="width: 95%; height: 90vh; margin: 2.5vh auto;">
-                    <span class="close">&times;</span>
-                    <h2>Edit File: ${fileInfo.original_filename}</h2>
-                    <div class="file-editor-toolbar">
-                        <div class="file-editor-search">
-                            <input type="text" id="file-search" placeholder="Search in file...">
-                            <button class="action-btn" onclick="searchInFile()">Search</button>
-                            <button class="action-btn" onclick="clearSearch()">Clear</button>
-                        </div>
-                    </div>
-                    <div id="file-editor-grid" style="height: calc(90vh - 150px); overflow: auto;">
-                        <table id="file-editor-table" class="data-table">
-                            <thead></thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                    <button id="save-file-changes" class="action-btn">Save Changes</button>
-                </div>
-            </div>
-        `);
-    }
-
-    const modal = $('#file-editor-modal');
-    const table = $('#file-editor-table');
+function showEditor(cell, type, currentValue) {
+    // Remove any existing editors
+    $('.edit-dropdown').remove();
+    $('td').removeClass('editing');
     
-    // Clear existing content
-    table.find('thead, tbody').empty();
+    cell.addClass('editing');
     
-    try {
-        const headers = Object.keys(data[0]);
-        const headerRow = $('<tr>');
-        headers.forEach(header => {
-            headerRow.append(`<th>${header}</th>`);
-        });
-        table.find('thead').append(headerRow);
+    if (type === 'date') {
+        const input = $('<input>')
+            .attr({
+                type: 'date',
+                value: currentValue
+            })
+            .addClass('editor-cell-select');
         
-        // Add data rows with cell-specific editors
-        data.forEach(row => {
-            const tableRow = $('<tr>');
-            headers.forEach(header => {
-                const cell = $('<td>');
-                const value = row[header] !== null ? row[header] : '';
-                cell.text(value);
-
-                // Add click handler to show appropriate editor
-                cell.on('click', function(e) {
-                    const currentValue = $(this).text();
-                    
-                    // Remove any existing editor
-                    $(this).find('select, input').remove();
-                    
-                    // Create appropriate editor based on column name
-                    if (header.toLowerCase().includes('sex')) {
-                        const select = $('<select>')
-                            .addClass('editor-cell-select')
-                            .append('<option value="Male">Male</option>')
-                            .append('<option value="Female">Female</option>')
-                            .append('<option value="Others">Others</option>')
-                            .val(currentValue);
-                        
-                        select.on('change blur', function() {
-                            cell.text($(this).val());
-                            $(this).remove();
-                        });
-                        
-                        cell.empty().append(select);
-                        select.focus();
-                    } 
-                    else if (header.toLowerCase().includes('date')) {
-                        const input = $('<input>')
-                            .attr({
-                                type: 'date',
-                                value: currentValue
-                            })
-                            .addClass('editor-cell-select');
-                        
-                        input.on('change blur', function() {
-                            cell.text($(this).val());
-                            $(this).remove();
-                        });
-                        
-                        cell.empty().append(input);
-                        input.focus();
-                    }
-                    else if (header.toLowerCase().includes('status')) {
-                        const select = $('<select>')
-                            .addClass('editor-cell-select')
-                            .append('<option value="Active">Active</option>')
-                            .append('<option value="Inactive">Inactive</option>')
-                            .append('<option value="Pending">Pending</option>')
-                            .val(currentValue);
-                        
-                        select.on('change blur', function() {
-                            cell.text($(this).val());
-                            $(this).remove();
-                        });
-                        
-                        cell.empty().append(select);
-                        select.focus();
-                    }
-                    else {
-                        // Make cell editable on click if not using a special editor
-                        cell.attr('contenteditable', 'true').focus();
-                    }
+        input.on('change blur', function() {
+            cell.text($(this).val()).removeClass('editing');
+            $(this).remove();
+        });
+        
+        cell.empty().append(input);
+        input.focus();
+    }
+    else if (type === 'salary') {
+        const input = $('<input>')
+            .attr({
+                type: 'number',
+                value: currentValue.replace(/[^0-9.]/g, ''),
+                step: '0.01'
+            })
+            .addClass('editor-cell-select');
+        
+        input.on('change blur', function() {
+            const value = parseFloat($(this).val() || 0).toLocaleString('en-PH', {
+                style: 'currency',
+                currency: 'PHP'
+            });
+            cell.text(value).removeClass('editing');
+            $(this).remove();
+        });
+        
+        cell.empty().append(input);
+        input.focus();
+    }
+    else {
+        const dropdown = $('<div>')
+            .addClass('edit-dropdown')
+            .append(`<select>${createDropdownOptions(type)}</select>`);
+        
+        const select = dropdown.find('select').val(currentValue);
+        
+                select.on('change blur', function() {
+                    cell.text($(this).val()).removeClass('editing');
+                    dropdown.remove();
                 });
                 
-                tableRow.append(cell);
-            });
-            table.find('tbody').append(tableRow);
-        });
-
-        // Handle save changes
-        $('#save-file-changes').off('click').on('click', function() {
-            const updatedData = [];
-            table.find('tbody tr').each(function() {
-                const row = {};
-                $(this).find('td').each(function(i) {
-                    const header = headers[i];
-                    // Get value from appropriate input type
-                    if ($(this).find('select, input').length) {
-                        row[header] = $(this).find('select, input').val();
-                    } else {
-                        row[header] = $(this).text();
-                    }
-                });
-                updatedData.push(row);
-            });
-            
-            // Save changes
-            $.ajax({
-                url: `${API_URL}/files/${fileId}/content`,
-                type: 'PUT',
-                contentType: 'application/json',
-                data: JSON.stringify({ content: updatedData }),
-                success: function(response) {
-                    if (response.success) {
-                        alert('File updated successfully!');
-                        modal.css('display', 'none');
-                        loadUploadedFiles($('#month-picker').val());
-                    } else {
-                        alert('Error: ' + response.message);
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('Save error:', xhr.responseText);
-                    alert('Error saving changes: ' + error);
-                }
-            });
-        });
-        
-        modal.css('display', 'block');
-    } catch (error) {
-        console.error('Error building table:', error);
-        alert('Error building table. Please check console for details.');
-    }
-}
-
-// Add search functionality
-function searchInFile() {
-    const searchTerm = $('#file-search').val().toLowerCase();
-    $('#file-editor-table tbody tr').each(function() {
-        const row = $(this);
-        const text = row.text().toLowerCase();
-        if (text.includes(searchTerm)) {
-            row.show();
-            // Highlight matching cells
-            row.find('td').each(function() {
-                const cell = $(this);
-                const cellText = cell.text().toLowerCase();
-                if (cellText.includes(searchTerm)) {
-                    cell.addClass('highlight');
-                }
-            });
-        } else {
-            row.hide();
+                cell.empty().append(dropdown);
+                select.focus();
+            }
         }
-    });
-}
-
-function clearSearch() {
-    $('#file-search').val('');
-    $('#file-editor-table tbody tr').show();
-    $('#file-editor-table td').removeClass('highlight');
-}
