@@ -633,7 +633,7 @@ def format_date_string(date_str):
     except Exception:
         return date_str
 
-@app.route('/api/files/<int:file_id>/content', methods['PUT'])
+@app.route('/api/files/<int:file_id>/content', methods=['PUT'])
 def update_file_content(file_id):
     connection = connect_to_database()
     if not connection:
