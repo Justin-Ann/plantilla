@@ -16,6 +16,19 @@ function checkServerConnectivity() {
     });
 }
 
+// Add function to format date in Philippine time
+function formatPhTime(date) {
+    return new Date(date).toLocaleString('en-US', {
+        timeZone: 'Asia/Manila',
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: true,
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
+}
+
 $(document).ready(function() {
     // Check server connectivity on page load
     checkServerConnectivity();
@@ -218,6 +231,14 @@ $(document).ready(function() {
         if ($(e.target).hasClass('modal')) {
             $('.modal').css('display', 'none');
         }
+    });
+
+    // Load current month's files on page load
+    loadUploadedFiles();
+    
+    // Update month picker handler
+    $('#month-picker').on('change', function() {
+        loadUploadedFiles($(this).val());
     });
 });
 
@@ -459,7 +480,14 @@ $('#load-files-btn').on('click', function() {
 });
 
 // Function to load uploaded files
-function loadUploadedFiles(monthYear) {
+function loadUploadedFiles(monthYear = null) {
+    if (!monthYear) {
+        // Default to current month if no month selected
+        const now = new Date();
+        monthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        $('#month-picker').val(monthYear);
+    }
+
     $.ajax({
         url: `${API_URL}/uploaded-files?month_year=${monthYear}`,
         type: 'GET',
@@ -468,23 +496,8 @@ function loadUploadedFiles(monthYear) {
                 const tableBody = $('#uploaded-files-table tbody');
                 tableBody.empty();
                 response.files.forEach(function(file) {
-                    const uploadDate = new Date(file.upload_date).toLocaleString('en-US', {
-                        hour: 'numeric',
-                        minute: 'numeric',
-                        hour12: true,
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric'
-                    });
-                    const lastModified = file.last_modified ? 
-                        new Date(file.last_modified).toLocaleString('en-US', {
-                            hour: 'numeric',
-                            minute: 'numeric',
-                            hour12: true,
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric'
-                        }) : 'Never';
+                    const uploadDate = formatPhTime(file.upload_date);
+                    const lastModified = file.last_modified ? formatPhTime(file.last_modified) : 'Never';
                     
                     tableBody.append(`
                         <tr>
@@ -493,6 +506,7 @@ function loadUploadedFiles(monthYear) {
                             <td>${lastModified}</td>
                             <td>
                                 <button class="action-btn edit-btn" onclick="editFile(${file.id})">Edit</button>
+                                <button class="action-btn download-btn" onclick="downloadFile(${file.id})">Download</button>
                                 <button class="action-btn delete-btn" onclick="deleteFile(${file.id})">Delete</button>
                             </td>
                         </tr>
@@ -553,6 +567,11 @@ function editFile(fileId) {
             alert('Server error occurred. Please check console for details.');
         }
     });
+}
+
+// Function to download file
+function downloadFile(fileId) {
+    window.location.href = `${API_URL}/files/${fileId}/download`;
 }
 
 function createDropdownOptions(type) {
@@ -882,7 +901,6 @@ function updateFileHistory(fileInfo, action) {
         timestamp: timestamp
     });
     
-    // Keep only the most recent items
     if (fileHistory.length > MAX_HISTORY_ITEMS) {
         fileHistory.pop();
     }
@@ -895,14 +913,7 @@ function displayFileHistory() {
     historyList.empty();
     
     fileHistory.forEach(item => {
-        const timeStr = new Date(item.timestamp).toLocaleString('en-US', {
-            hour: 'numeric',
-            minute: 'numeric',
-            hour12: true,
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        });
+        const timeStr = formatPhTime(item.timestamp);
         
         historyList.append(`
             <div class="history-item">

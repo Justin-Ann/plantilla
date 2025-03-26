@@ -226,6 +226,15 @@ button:hover {
     background-color: var(--success-color);
 }
 
+.download-btn {
+    background-color: var(--success-color);
+    color: var(--light-color);
+}
+
+.download-btn:hover {
+    background-color: #1a7d31;
+}
+
 /* Tables */
 .data-table {
     overflow-x: auto;

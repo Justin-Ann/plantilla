@@ -779,5 +779,29 @@ def update_applicant(id):
             cursor.close()
             connection.close()
 
+@app.route('/api/files/<int:file_id>/download', methods=['GET'])
+def download_file(file_id):
+    try:
+        connection = connect_to_database()
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM uploaded_files WHERE id = %s", (file_id,))
+        file_info = cursor.fetchone()
+        
+        if not file_info:
+            return jsonify({'success': False, 'message': 'File not found'})
+        
+        return send_file(
+            file_info['file_path'],
+            as_attachment=True,
+            download_name=file_info['original_filename']
+        )
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        if connection:
+            cursor.close()
+            connection.close()
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
