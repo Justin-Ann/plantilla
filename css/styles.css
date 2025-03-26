@@ -135,6 +135,16 @@ h2 {
     border-top: 4px solid var(--danger-color);
 }
 
+.card.clickable {
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card.clickable:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
 /* Tabs */
 .tabs {
     display: flex;
@@ -552,6 +562,34 @@ td select:focus, td input:focus {
     border: none;
     background: white;
     cursor: pointer;
+}
+
+/* File History */
+.file-history {
+    margin-top: 20px;
+    padding: 15px;
+    background: var(--light-color);
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.file-history h4 {
+    margin-bottom: 10px;
+    color: var(--primary-color);
+}
+
+.history-item {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.history-item:last-child {
+    border-bottom: none;
+}
+
+.history-timestamp {
+    color: #666;
+    font-size: 0.9em;
 }
 
 /* Responsive */

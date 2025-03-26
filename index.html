@@ -25,15 +25,15 @@
             <div id="dashboard" class="page active">
                 <h2>Dashboard</h2>
                 <div class="status-cards">
-                    <div class="card" id="on-process">
+                    <div class="card clickable" id="on-process" onclick="showFilteredData('On-process')">
                         <h3>On-process</h3>
                         <p class="count">0</p>
                     </div>
-                    <div class="card" id="on-hold">
+                    <div class="card clickable" id="on-hold" onclick="showFilteredData('On-hold')">
                         <h3>On-hold</h3>
                         <p class="count">0</p>
                     </div>
-                    <div class="card" id="not-yet-filling">
+                    <div class="card clickable" id="not-yet-filling" onclick="showFilteredData('Not yet for filling')">
                         <h3>Not yet for filling</h3>
                         <p class="count">0</p>
                     </div>
@@ -58,6 +58,10 @@
                             </thead>
                             <tbody></tbody>
                         </table>
+                    </div>
+                    <div class="file-history">
+                        <h4>Recent Activity</h4>
+                        <div id="file-history-list"></div>
                     </div>
                 </div>
             </div>

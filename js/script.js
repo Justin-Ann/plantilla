@@ -468,8 +468,23 @@ function loadUploadedFiles(monthYear) {
                 const tableBody = $('#uploaded-files-table tbody');
                 tableBody.empty();
                 response.files.forEach(function(file) {
-                    const uploadDate = new Date(file.upload_date).toLocaleString();
-                    const lastModified = file.last_modified ? new Date(file.last_modified).toLocaleString() : 'Never';
+                    const uploadDate = new Date(file.upload_date).toLocaleString('en-US', {
+                        hour: 'numeric',
+                        minute: 'numeric',
+                        hour12: true,
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                    });
+                    const lastModified = file.last_modified ? 
+                        new Date(file.last_modified).toLocaleString('en-US', {
+                            hour: 'numeric',
+                            minute: 'numeric',
+                            hour12: true,
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                        }) : 'Never';
                     
                     tableBody.append(`
                         <tr>
@@ -522,7 +537,9 @@ function editFile(fileId) {
         success: function(response) {
             if (response.success) {
                 try {
+                    updateFileHistory(response.file_info, 'Accessed');
                     showFileEditor(fileId, response.data, response.file_info);
+                    updateStatusCounts(response.data);
                 } catch (error) {
                     console.error('Error showing file editor:', error);
                     alert('Error displaying file content. Please check console for details.');
@@ -796,6 +813,8 @@ function showFileEditor(fileId, data, fileInfo) {
                 data: JSON.stringify({ content: updatedData }),
                 success: function(response) {
                     if (response.success) {
+                        updateFileHistory(fileInfo, 'Updated');
+                        updateStatusCounts(updatedData);
                         alert('File updated successfully!');
                         modal.css('display', 'none');
                         loadUploadedFiles($('#month-picker').val());
@@ -835,4 +854,79 @@ function makeEditable(cell) {
             }
             $(this).removeAttr('contenteditable');
         });
+}
+
+// Add file history tracking
+let fileHistory = [];
+const MAX_HISTORY_ITEMS = 10;
+
+function showFilteredData(status) {
+    // Navigate to data management page
+    $('.nav-menu a[data-page="data-management"]').click();
+    
+    // Switch to clean data tab
+    $('.tab[data-tab="clean-data"]').click();
+    
+    // Set the status filter
+    $('#status-filter').val(status);
+    
+    // Load the filtered data
+    loadCleanData(status);
+}
+
+function updateFileHistory(fileInfo, action) {
+    const timestamp = new Date();
+    fileHistory.unshift({
+        filename: fileInfo.original_filename,
+        action: action,
+        timestamp: timestamp
+    });
+    
+    // Keep only the most recent items
+    if (fileHistory.length > MAX_HISTORY_ITEMS) {
+        fileHistory.pop();
+    }
+    
+    displayFileHistory();
+}
+
+function displayFileHistory() {
+    const historyList = $('#file-history-list');
+    historyList.empty();
+    
+    fileHistory.forEach(item => {
+        const timeStr = new Date(item.timestamp).toLocaleString('en-US', {
+            hour: 'numeric',
+            minute: 'numeric',
+            hour12: true,
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+        
+        historyList.append(`
+            <div class="history-item">
+                <div>${item.action}: ${item.filename}</div>
+                <div class="history-timestamp">${timeStr}</div>
+            </div>
+        `);
+    });
+}
+
+function updateStatusCounts(data) {
+    const counts = {
+        'On-process': 0,
+        'On-hold': 0,
+        'Not yet for filling': 0
+    };
+    
+    data.forEach(row => {
+        if (row.status in counts) {
+            counts[row.status]++;
+        }
+    });
+    
+    $('#on-process .count').text(counts['On-process']);
+    $('#on-hold .count').text(counts['On-hold']);
+    $('#not-yet-filling .count').text(counts['Not yet for filling']);
 }
