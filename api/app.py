@@ -790,12 +790,28 @@ def download_file(file_id):
         if not file_info:
             return jsonify({'success': False, 'message': 'File not found'})
         
-        return send_file(
-            file_info['file_path'],
-            as_attachment=True,
-            download_name=file_info['original_filename']
-        )
+        # Convert relative path to absolute path
+        file_path = os.path.abspath(os.path.join(
+            os.path.dirname(__file__),
+            '..',
+            'uploads',
+            os.path.basename(file_info['file_path'])
+        ))
         
+        # Check if file exists
+        if not os.path.exists(file_path):
+            return jsonify({'success': False, 'message': 'File not found on server'})
+        
+        try:
+            return send_file(
+                file_path,
+                as_attachment=True,
+                download_name=file_info['original_filename'],
+                mimetype='application/octet-stream'
+            )
+        except Exception as e:
+            return jsonify({'success': False, 'message': f'Error downloading file: {str(e)}'})
+            
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
     finally:

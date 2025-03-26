@@ -571,7 +571,37 @@ function editFile(fileId) {
 
 // Function to download file
 function downloadFile(fileId) {
-    window.location.href = `${API_URL}/files/${fileId}/download`;
+    $.ajax({
+        url: `${API_URL}/files/${fileId}/download`,
+        type: 'GET',
+        xhrFields: {
+            responseType: 'blob'
+        },
+        success: function(response) {
+            // Create a blob URL and trigger download
+            const blob = new Blob([response], { type: 'application/octet-stream' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `download_${fileId}`; // Filename will be set by server
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            a.remove();
+        },
+        error: function(xhr) {
+            try {
+                const reader = new FileReader();
+                reader.onload = function() {
+                    const error = JSON.parse(this.result);
+                    alert('Error downloading file: ' + (error.message || 'Unknown error'));
+                };
+                reader.readAsText(xhr.response);
+            } catch (e) {
+                alert('Error downloading file. Please try again.');
+            }
+        }
+    });
 }
 
 function createDropdownOptions(type) {
