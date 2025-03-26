@@ -597,22 +597,54 @@ function downloadFile(fileId, type = 'raw') {
         xhrFields: {
             responseType: 'blob'
         },
-        success: function(blob) {
-            const url = window.URL.createObjectURL(new Blob([blob]));
+        success: function(response, status, xhr) {
+            // Check if response is an error message
+            if (response instanceof Blob && response.type === 'application/json') {
+                const reader = new FileReader();
+                reader.onload = function() {
+                    try {
+                        const error = JSON.parse(this.result);
+                        console.error('Download error:', error);
+                        alert(error.message || 'Error downloading file');
+                    } catch (e) {
+                        alert('Error downloading file');
+                    }
+                };
+                reader.readAsText(response);
+                return;
+            }
+
+            // Create download link
+            const blob = new Blob([response], { type: xhr.getResponseHeader('content-type') });
+            const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            const filename = type === 'raw' ? 
-                `raw_data_${fileId}.xlsx` : 
-                `clean_data_${fileId}.xlsx`;
+            
+            // Get filename from response headers or create default
+            const contentDisposition = xhr.getResponseHeader('content-disposition');
+            let filename;
+            if (contentDisposition && contentDisposition.includes('filename=')) {
+                filename = contentDisposition.split('filename=')[1].replace(/"/g, '');
+            } else {
+                filename = `${type}_data_${fileId}.xlsx`;
+            }
+            
             link.setAttribute('download', filename);
             document.body.appendChild(link);
             link.click();
             link.parentNode.removeChild(link);
             window.URL.revokeObjectURL(url);
         },
-        error: function(xhr) {
+        error: function(xhr, status, error) {
+            let errorMessage = 'Error downloading file';
+            try {
+                const response = JSON.parse(xhr.responseText);
+                errorMessage = response.message || errorMessage;
+            } catch (e) {
+                console.error('Parse error:', e);
+            }
             console.error('Download failed:', xhr);
-            alert('Error downloading file. Please check the console for details.');
+            alert(errorMessage);
         }
     });
 }

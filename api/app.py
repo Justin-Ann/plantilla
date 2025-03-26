@@ -807,30 +807,41 @@ def download_file(file_id):
         try:
             df = None
             if download_type == 'raw':
-                # Read the original file
-                if file_info['file_path'].endswith('.csv'):
-                    df = pd.read_csv(file_info['file_path'])
+                # Get absolute file path
+                abs_file_path = os.path.abspath(file_info['file_path'])
+                if not os.path.exists(abs_file_path):
+                    # Try relative path
+                    rel_path = os.path.join(app.config['UPLOAD_FOLDER'], os.path.basename(file_info['file_path']))
+                    if os.path.exists(rel_path):
+                        abs_file_path = rel_path
+                    else:
+                        return jsonify({'success': False, 'message': 'File not found on server'}), 404
+                
+                # Read original file
+                if abs_file_path.endswith('.csv'):
+                    df = pd.read_csv(abs_file_path)
                 else:
-                    df = pd.read_excel(file_info['file_path'])
+                    df = pd.read_excel(abs_file_path)
             else:
-                # Get clean data from database for this file
+                # Get clean data for this file
                 cursor.execute("""
-                    SELECT * FROM clean_data 
-                    WHERE raw_data_id IN (
-                        SELECT id FROM raw_data 
-                        WHERE is_latest = TRUE AND 
-                        id IN (SELECT raw_data_id FROM clean_data)
-                    )
+                    SELECT cd.*
+                    FROM clean_data cd
+                    JOIN raw_data rd ON cd.raw_data_id = rd.id
+                    WHERE rd.is_latest = TRUE
+                    ORDER BY cd.plantilla_no
                 """)
                 clean_data = cursor.fetchall()
                 if clean_data:
                     df = pd.DataFrame(clean_data)
-            
-            if df is None:
-                return jsonify({'success': False, 'message': 'No data found'}), 404
+                else:
+                    return jsonify({'success': False, 'message': 'No clean data found'}), 404
 
-            # Create temporary file for download
-            temp_filename = f"export_{file_id}_{download_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+            if df is None:
+                return jsonify({'success': False, 'message': 'Could not read file data'}), 500
+
+            # Create temporary file
+            temp_filename = f"{download_type}_data_{file_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
             temp_filepath = os.path.join(app.config['UPLOAD_FOLDER'], temp_filename)
             
             # Export to Excel
@@ -922,6 +933,17 @@ def export_clean_data_excel():
         if connection:
             cursor.close()
             connection.close()
+
+@app.route('/api/health-check', methods=['GET'])
+def health_check():
+    try:
+        connection = connect_to_database()
+        if connection:
+            connection.close()
+            return jsonify({'success': True, 'message': 'Server is running'})
+        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
