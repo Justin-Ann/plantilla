@@ -640,7 +640,24 @@ def update_file_content(file_id):
         return jsonify({'success': False, 'message': 'Database connection failed'})
     
     try:
-        cursor = connection.cursor(dictionary=True)
+        cursor = connection.cursor()
+        
+        # First check if last_modified column exists
+        cursor.execute("""
+            SELECT COUNT(*) 
+            FROM INFORMATION_SCHEMA.COLUMNS 
+            WHERE TABLE_NAME = 'uploaded_files' 
+            AND COLUMN_NAME = 'last_modified'
+            AND TABLE_SCHEMA = DATABASE()
+        """)
+        
+        if cursor.fetchone()[0] == 0:
+            # Add last_modified column if it doesn't exist
+            cursor.execute("""
+                ALTER TABLE uploaded_files 
+                ADD COLUMN last_modified TIMESTAMP NULL DEFAULT NULL
+            """)
+            connection.commit()
         
         # Update last_modified timestamp
         cursor.execute("""
