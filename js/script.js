@@ -264,36 +264,32 @@ $(document).ready(function() {
 // Update all other API calls to use the new API_URL
 // Load dashboard counts
 function loadDashboardCounts() {
+    const counts = {
+        'On-process': 0,
+        'On-hold': 0,
+        'Not yet for filling': 0
+    };
+
+    // Get all records from clean_data table instead of checking individual files
     $.ajax({
-        url: `${API_URL}/uploaded-files`,
+        url: `${API_URL}/clean-data`,
         type: 'GET',
         success: function(response) {
-            if (response.success && response.files.length > 0) {
-                let allFilesData = [];
-                let completedRequests = 0;
-                
-                // Get content from all active files
-                response.files.forEach(file => {
-                    $.ajax({
-                        url: `${API_URL}/files/${file.id}/content`,
-                        type: 'GET',
-                        success: function(contentResponse) {
-                            if (contentResponse.success) {
-                                allFilesData = allFilesData.concat(contentResponse.data);
-                            }
-                            completedRequests++;
-                            
-                            // When all requests are complete, update counts
-                            if (completedRequests === response.files.length) {
-                                updateStatusCounts(allFilesData);
-                            }
-                        },
-                        error: function() {
-                            completedRequests++;
-                        }
-                    });
+            if (response.success && response.data.length > 0) {
+                response.data.forEach(record => {
+                    if (record.status in counts) {
+                        counts[record.status]++;
+                    }
                 });
+                
+                // Update the dashboard counts
+                $('#on-process .count').text(counts['On-process']);
+                $('#on-hold .count').text(counts['On-hold']);
+                $('#not-yet-filling .count').text(counts['Not yet for filling']);
             }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error loading dashboard counts:', error);
         }
     });
 }
@@ -589,7 +585,7 @@ function editFile(fileId) {
                 try {
                     updateFileHistory(response.file_info, 'Accessed');
                     showFileEditor(fileId, response.data, response.file_info);
-                    updateStatusCounts(response.data);
+                    loadDashboardCounts(); // Update this line
                 } catch (error) {
                     console.error('Error showing file editor:', error);
                     alert('Error displaying file content. Please check console for details.');
@@ -887,7 +883,7 @@ function showFileEditor(fileId, data, fileInfo) {
                 success: function(response) {
                     if (response.success) {
                         updateFileHistory(fileInfo, 'Updated');
-                        updateStatusCounts(updatedData);
+                        loadDashboardCounts(); // Update this line
                         alert('File updated successfully!');
                         modal.css('display', 'none');
                         loadUploadedFiles($('#month-picker').val());
@@ -976,33 +972,4 @@ function displayFileHistory() {
             </div>
         `);
     });
-}
-
-function updateStatusCounts(data) {
-    const counts = {
-        'On-process': 0,
-        'On-hold': 0,
-        'Not yet for filling': 0
-    };
-    
-    // Count unique records by plantilla_no to avoid duplicates
-    const uniqueRecords = new Map();
-    data.forEach(row => {
-        // Use plantilla_no as key to ensure uniqueness
-        if (row.plantilla_no && row.status) {
-            uniqueRecords.set(row.plantilla_no, row.status);
-        }
-    });
-    
-    // Count statuses from unique records
-    uniqueRecords.forEach(status => {
-        if (status in counts) {
-            counts[status]++;
-        }
-    });
-    
-    // Update the dashboard counts
-    $('#on-process .count').text(counts['On-process']);
-    $('#on-hold .count').text(counts['On-hold']);
-    $('#not-yet-filling .count').text(counts['Not yet for filling']);
 }

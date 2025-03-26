@@ -214,9 +214,18 @@ def get_clean_data():
         cursor = connection.cursor(dictionary=True)
         
         if status:
-            cursor.execute("SELECT * FROM clean_data WHERE status = %s", (status,))
+            # If status filter is provided
+            cursor.execute("""
+                SELECT * FROM clean_data 
+                WHERE status = %s
+                ORDER BY plantilla_no
+            """, (status,))
         else:
-            cursor.execute("SELECT * FROM clean_data")
+            # Get all records
+            cursor.execute("""
+                SELECT * FROM clean_data 
+                ORDER BY plantilla_no
+            """)
         
         data = cursor.fetchall()
         
