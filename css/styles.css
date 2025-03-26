@@ -390,18 +390,23 @@ input[type="month"] {
 }
 
 #file-editor-modal .modal-content {
-    width: 95%;
-    height: 85vh;  /* Reduced from 96vh */
-    margin: 5vh auto;  /* Increased from 1vh */
-    padding: 20px;
+    width: auto;
+    max-width: 1200px;  /* Limit maximum width */
+    min-width: 800px;   /* Set minimum width */
+    height: auto;       /* Remove fixed height */
+    margin: 20px auto;  /* Better vertical spacing */
+    padding: 15px;
     display: flex;
     flex-direction: column;
+    position: relative;
+    left: -125px;      /* Offset for sidebar width to center in viewport */
 }
 
 #file-editor-grid {
-    flex: 1;
-    min-height: 0;  /* Allow flex to handle height */
-    margin: 15px 0;
+    height: calc(100vh - 250px);  /* Dynamic height based on viewport */
+    max-height: 600px;           /* Maximum height */
+    overflow: auto;
+    margin: 10px 0;
     border: 1px solid var(--border-color);
     border-radius: 4px;
     background: white;
@@ -409,14 +414,38 @@ input[type="month"] {
 
 #file-editor-table {
     width: 100%;
-    max-height: calc(85vh - 180px);  /* Adjust table height */
-    overflow: auto;
+    margin: 0;
+    border-collapse: collapse;
 }
 
+/* Compact table cells */
+#file-editor-table td, 
 #file-editor-table th {
-    position: sticky;  /* Keep headers visible */
-    top: 0;
-    z-index: 1;
+    padding: 6px 10px;
+    font-size: 14px;
+    max-width: 150px;      /* More compact cells */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Better scroll handling */
+#file-editor-grid::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+#file-editor-grid::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+#file-editor-grid::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+#file-editor-grid::-webkit-scrollbar-thumb:hover {
+    background: #555;
 }
 
 .file-editor-toolbar {
