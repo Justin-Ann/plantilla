@@ -633,7 +633,7 @@ def format_date_string(date_str):
     except Exception:
         return date_str
 
-@app.route('/api/files/<int:file_id>/content', methods=['PUT'])
+@app.route('/api/files/<int:file_id>/content', methods['PUT'])
 def update_file_content(file_id):
     connection = connect_to_database()
     if not connection:
@@ -801,16 +801,20 @@ def download_file(file_id):
         # Check if file exists
         if not os.path.exists(file_path):
             return jsonify({'success': False, 'message': 'File not found on server'})
-        
-        try:
-            return send_file(
-                file_path,
-                as_attachment=True,
-                download_name=file_info['original_filename'],
-                mimetype='application/octet-stream'
-            )
-        except Exception as e:
-            return jsonify({'success': False, 'message': f'Error downloading file: {str(e)}'})
+            
+        # Set correct headers for Excel files
+        mimetype = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        if file_path.endswith('.xls'):
+            mimetype = 'application/vnd.ms-excel'
+        elif file_path.endswith('.csv'):
+            mimetype = 'text/csv'
+            
+        return send_file(
+            file_path,
+            mimetype=mimetype,
+            as_attachment=True,
+            download_name=file_info['original_filename']
+        )
             
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})

@@ -240,23 +240,51 @@ $(document).ready(function() {
     $('#month-picker').on('change', function() {
         loadUploadedFiles($(this).val());
     });
+
+    // Set current month in month picker and load files
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    $('#month-picker').val(currentMonth);
+    
+    // Load initial data with current month
+    loadUploadedFiles(currentMonth);
+    loadDashboardCounts(currentMonth);
+    
+    // Update status counts when month changes
+    $('#month-picker').on('change', function() {
+        const selectedMonth = $(this).val();
+        loadUploadedFiles(selectedMonth);
+        loadDashboardCounts(selectedMonth);
+    });
+    
+    // Remove the load files button click handler since it's not needed anymore
+    $('#load-files-btn').remove();
 });
 
 // Update all other API calls to use the new API_URL
 // Load dashboard counts
-function loadDashboardCounts() {
+function loadDashboardCounts(monthYear = null) {
+    if (!monthYear) {
+        const now = new Date();
+        monthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    }
+    
     $.ajax({
-        url: `${API_URL}/clean-data`,
+        url: `${API_URL}/uploaded-files?month_year=${monthYear}`,
         type: 'GET',
         success: function(response) {
-            if (response.success) {
-                const onProcessCount = response.data.filter(item => item.status === 'On-process').length;
-                const onHoldCount = response.data.filter(item => item.status === 'On-hold').length;
-                const notYetCount = response.data.filter(item => item.status === 'Not yet for filling').length;
-                
-                $('#on-process .count').text(onProcessCount);
-                $('#on-hold .count').text(onHoldCount);
-                $('#not-yet-filling .count').text(notYetCount);
+            if (response.success && response.files.length > 0) {
+                // Get the most recent file's content for status counts
+                const latestFile = response.files[0];
+                $.ajax({
+                    url: `${API_URL}/files/${latestFile.id}/content`,
+                    type: 'GET',
+                    success: function(contentResponse) {
+                        if (contentResponse.success) {
+                            updateStatusCounts(contentResponse.data);
+                        }
+                    }
+                });
             }
         }
     });
@@ -569,39 +597,27 @@ function editFile(fileId) {
     });
 }
 
-// Function to download file
+// Function to download file with proper error handling
 function downloadFile(fileId) {
-    $.ajax({
-        url: `${API_URL}/files/${fileId}/download`,
-        type: 'GET',
-        xhrFields: {
-            responseType: 'blob'
-        },
-        success: function(response) {
-            // Create a blob URL and trigger download
-            const blob = new Blob([response], { type: 'application/octet-stream' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `download_${fileId}`; // Filename will be set by server
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            a.remove();
-        },
-        error: function(xhr) {
-            try {
-                const reader = new FileReader();
-                reader.onload = function() {
-                    const error = JSON.parse(this.result);
-                    alert('Error downloading file: ' + (error.message || 'Unknown error'));
-                };
-                reader.readAsText(xhr.response);
-            } catch (e) {
-                alert('Error downloading file. Please try again.');
-            }
-        }
-    });
+    const downloadUrl = `${API_URL}/files/${fileId}/download`;
+    
+    // Create a temporary iframe for downloading
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+    
+    // Add load and error handlers
+    iframe.onload = function() {
+        document.body.removeChild(iframe);
+    };
+    
+    iframe.onerror = function() {
+        document.body.removeChild(iframe);
+        alert('Error downloading file. Please try again.');
+    };
+    
+    // Start download
+    iframe.src = downloadUrl;
 }
 
 function createDropdownOptions(type) {
