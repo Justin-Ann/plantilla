@@ -799,36 +799,38 @@ def download_file(file_id):
         file_info = cursor.fetchone()
         
         if not file_info:
-            return jsonify({'success': False, 'message': 'File not found'})
+            return jsonify({'success': False, 'message': 'File not found'}), 404
+            
+        # Get the correct file path
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        file_path = os.path.join(base_dir, 'uploads', os.path.basename(file_info['file_path']))
         
-        # Convert relative path to absolute path
-        file_path = os.path.abspath(os.path.join(
-            os.path.dirname(__file__),
-            '..',
-            'uploads',
-            os.path.basename(file_info['file_path'])
-        ))
-        
-        # Check if file exists
         if not os.path.exists(file_path):
-            return jsonify({'success': False, 'message': 'File not found on server'})
+            return jsonify({'success': False, 'message': 'File not found on server'}), 404
             
-        # Set correct headers for Excel files
-        mimetype = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        if file_path.endswith('.xls'):
-            mimetype = 'application/vnd.ms-excel'
-        elif file_path.endswith('.csv'):
-            mimetype = 'text/csv'
+        try:
+            # Set correct MIME type based on file extension
+            mime_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            if file_path.endswith('.xls'):
+                mime_type = 'application/vnd.ms-excel'
+            elif file_path.endswith('.csv'):
+                mime_type = 'text/csv'
+
+            return send_file(
+                file_path,
+                mimetype=mime_type,
+                as_attachment=True,
+                download_name=file_info['original_filename'],
+                max_age=0  # Prevent caching
+            )
             
-        return send_file(
-            file_path,
-            mimetype=mimetype,
-            as_attachment=True,
-            download_name=file_info['original_filename']
-        )
+        except Exception as e:
+            print(f"Error sending file: {str(e)}")
+            return jsonify({'success': False, 'message': 'Error sending file'}), 500
             
     except Exception as e:
-        return jsonify({'success': False, 'message': str(e)})
+        print(f"Error in download_file: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)}), 500
     finally:
         if connection:
             cursor.close()

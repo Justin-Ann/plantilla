@@ -603,25 +603,7 @@ function editFile(fileId) {
 
 // Function to download file with proper error handling
 function downloadFile(fileId) {
-    const downloadUrl = `${API_URL}/files/${fileId}/download`;
-    
-    // Create a temporary iframe for downloading
-    const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    document.body.appendChild(iframe);
-    
-    // Add load and error handlers
-    iframe.onload = function() {
-        document.body.removeChild(iframe);
-    };
-    
-    iframe.onerror = function() {
-        document.body.removeChild(iframe);
-        alert('Error downloading file. Please try again.');
-    };
-    
-    // Start download
-    iframe.src = downloadUrl;
+    window.location.href = `${API_URL}/files/${fileId}/download`;
 }
 
 function createDropdownOptions(type) {
