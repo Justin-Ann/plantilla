@@ -793,25 +793,44 @@ def update_applicant(id):
 @app.route('/api/files/<int:file_id>/download', methods=['GET'])
 def download_file(file_id):
     try:
+        download_type = request.args.get('type', 'raw')  # Default to raw if not specified
         connection = connect_to_database()
         cursor = connection.cursor(dictionary=True)
         
-        # Get file content from database/file system
+        # Get file info
         cursor.execute("SELECT * FROM uploaded_files WHERE id = %s", (file_id,))
         file_info = cursor.fetchone()
         
         if not file_info:
             return jsonify({'success': False, 'message': 'File not found'}), 404
-        
-        # Read the file content
+
         try:
-            if file_info['file_path'].endswith('.csv'):
-                df = pd.read_csv(file_info['file_path'])
+            df = None
+            if download_type == 'raw':
+                # Read the original file
+                if file_info['file_path'].endswith('.csv'):
+                    df = pd.read_csv(file_info['file_path'])
+                else:
+                    df = pd.read_excel(file_info['file_path'])
             else:
-                df = pd.read_excel(file_info['file_path'])
+                # Get clean data from database for this file
+                cursor.execute("""
+                    SELECT * FROM clean_data 
+                    WHERE raw_data_id IN (
+                        SELECT id FROM raw_data 
+                        WHERE is_latest = TRUE AND 
+                        id IN (SELECT raw_data_id FROM clean_data)
+                    )
+                """)
+                clean_data = cursor.fetchall()
+                if clean_data:
+                    df = pd.DataFrame(clean_data)
             
-            # Create a temporary file for download
-            temp_filename = f"export_{file_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+            if df is None:
+                return jsonify({'success': False, 'message': 'No data found'}), 404
+
+            # Create temporary file for download
+            temp_filename = f"export_{file_id}_{download_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
             temp_filepath = os.path.join(app.config['UPLOAD_FOLDER'], temp_filename)
             
             # Export to Excel
@@ -822,7 +841,7 @@ def download_file(file_id):
                     temp_filepath,
                     mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                     as_attachment=True,
-                    download_name=f"{os.path.splitext(file_info['original_filename'])[0]}.xlsx"
+                    download_name=f"{os.path.splitext(file_info['original_filename'])[0]}_{download_type}.xlsx"
                 )
             finally:
                 # Clean up temp file after sending

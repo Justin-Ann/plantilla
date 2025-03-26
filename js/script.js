@@ -538,7 +538,13 @@ function loadUploadedFiles(monthYear = null) {
                             <td>${lastModified}</td>
                             <td>
                                 <button class="action-btn edit-btn" onclick="editFile(${file.id})">Edit</button>
-                                <button class="action-btn download-btn" onclick="downloadFile(${file.id})">Download</button>
+                                <div class="dropdown">
+                                    <button class="action-btn download-btn" onclick="toggleDownloadMenu(${file.id})">Download ▼</button>
+                                    <div id="download-menu-${file.id}" class="download-menu">
+                                        <a href="javascript:void(0)" onclick="downloadFile(${file.id}, 'raw')">Raw Data</a>
+                                        <a href="javascript:void(0)" onclick="downloadFile(${file.id}, 'clean')">Clean Data</a>
+                                    </div>
+                                </div>
                                 <button class="action-btn delete-btn" onclick="deleteFile(${file.id})">Delete</button>
                             </td>
                         </tr>
@@ -554,75 +560,29 @@ function loadUploadedFiles(monthYear = null) {
     });
 }
 
-// Function to delete file
-function deleteFile(fileId) {
-    if (confirm('Are you sure you want to delete this file?')) {
-        $.ajax({
-            url: `${API_URL}/files/${fileId}`,
-            type: 'DELETE',
-            success: function(response) {
-                if (response.success) {
-                    alert('File deleted successfully!');
-                    loadUploadedFiles($('#month-picker').val());
-                } else {
-                    alert('Error: ' + response.message);
-                }
-            },
-            error: function() {
-                alert('Server error occurred.');
-            }
-        });
-    }
+// Add function to toggle download menu
+function toggleDownloadMenu(fileId) {
+    const menu = document.getElementById(`download-menu-${fileId}`);
+    $('.download-menu').not(menu).removeClass('show');
+    menu.classList.toggle('show');
 }
 
-// Function to edit file
-function editFile(fileId) {
-    $.ajax({
-        url: `${API_URL}/files/${fileId}/content`,
-        type: 'GET',
-        success: function(response) {
-            if (response.success) {
-                try {
-                    updateFileHistory(response.file_info, 'Accessed');
-                    showFileEditor(fileId, response.data, response.file_info);
-                    loadDashboardCounts(); // Update this line
-                } catch (error) {
-                    console.error('Error showing file editor:', error);
-                    alert('Error displaying file content. Please check console for details.');
-                }
-            } else {
-                alert('Error: ' + response.message);
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error('Server error:', xhr.responseText);
-            alert('Server error occurred. Please check console for details.');
-        }
-    });
-}
-
-// Function to download file with proper error handling
-function downloadFile(fileId) {
+// Update download function to handle different types
+function downloadFile(fileId, type = 'raw') {
     $.ajax({
         url: `${API_URL}/files/${fileId}/download`,
         type: 'GET',
+        data: { type: type },
         xhrFields: {
             responseType: 'blob'
         },
         success: function(blob) {
-            // Create blob link to download
             const url = window.URL.createObjectURL(new Blob([blob]));
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', `export_${fileId}.xlsx`); 
-            
-            // Append to html link element page
+            link.setAttribute('download', `export_${fileId}_${type}.xlsx`);
             document.body.appendChild(link);
-            
-            // Start download
             link.click();
-            
-            // Clean up and remove the link
             link.parentNode.removeChild(link);
             window.URL.revokeObjectURL(url);
         },
@@ -632,6 +592,13 @@ function downloadFile(fileId) {
         }
     });
 }
+
+// Close download menus when clicking outside
+$(document).on('click', function(e) {
+    if (!$(e.target).closest('.dropdown').length) {
+        $('.download-menu').removeClass('show');
+    }
+});
 
 function createDropdownOptions(type) {
     switch(type) {

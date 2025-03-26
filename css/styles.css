@@ -601,6 +601,40 @@ td select:focus, td input:focus {
     font-size: 0.9em;
 }
 
+/* Download Menu Styles */
+.dropdown {
+    display: inline-block;
+    position: relative;
+}
+
+.download-menu {
+    display: none;
+    position: absolute;
+    background-color: var(--light-color);
+    min-width: 120px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    border-radius: 4px;
+    z-index: 1000;
+    top: 100%;
+    left: 0;
+}
+
+.download-menu.show {
+    display: block;
+}
+
+.download-menu a {
+    color: var(--text-color);
+    padding: 8px 12px;
+    text-decoration: none;
+    display: block;
+    cursor: pointer;
+}
+
+.download-menu a:hover {
+    background-color: rgba(0,0,0,0.05);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .container {
