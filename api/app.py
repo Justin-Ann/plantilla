@@ -878,6 +878,73 @@ def download_file(file_id):
 def export_clean_data_excel():
     try:
         connection = connect_to_database()
+        if not connection:
+            return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+
+        cursor = connection.cursor(dictionary=True)
+        try:
+            # Get all clean data
+            cursor.execute("""
+                SELECT 
+                    cd.plantilla_no,
+                    cd.plantilla_division,
+                    cd.position_title,
+                    cd.sg,
+                    cd.remarks,
+                    cd.date_published,
+                    cd.status,
+                    cd.date_vacated,
+                    cd.vacated_due_to,
+                    cd.vacated_by
+                FROM clean_data cd
+                WHERE cd.raw_data_id IN (
+                    SELECT id FROM raw_data WHERE is_latest = TRUE
+                )
+                ORDER BY cd.plantilla_no
+            """)
+            data = cursor.fetchall()
+            
+            if not data:
+                return jsonify({'success': False, 'message': 'No data available to export'}), 404
+
+            # Create DataFrame and export to Excel
+            df = pd.DataFrame(data)
+            
+            # Create temp directory if it doesn't exist
+            temp_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'temp')
+            os.makedirs(temp_dir, exist_ok=True)
+            
+            # Create temporary file
+            temp_filename = f"clean_data_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+            temp_filepath = os.path.join(temp_dir, temp_filename)
+            
+            # Export to Excel with proper formatting
+            df.to_excel(temp_filepath, index=False, engine='openpyxl')
+
+            return send_file(
+                temp_filepath,
+                mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                as_attachment=True,
+                download_name=temp_filename
+            )
+            
+        except Exception as e:
+            print(f"Error executing query or creating file: {str(e)}")
+            return jsonify({'success': False, 'message': 'Error generating export file'}), 500
+        finally:
+            cursor.close()
+            
+    except Exception as e:
+        print(f"Error in export: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        if connection:
+            connection.close()
+
+@app.route('/api/clean-data/export', methods=['GET'])
+def export_clean_data_excel():
+    try:
+        connection = connect_to_database()
         cursor = connection.cursor(dictionary=True)
         
         # Get all clean data

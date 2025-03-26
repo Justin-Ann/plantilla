@@ -130,25 +130,53 @@ $(document).ready(function() {
     
     // Export button
     $('#export-btn').on('click', function() {
+        const button = $(this);
+        button.prop('disabled', true).text('Exporting...');
+    
         $.ajax({
             url: `${API_URL}/clean-data/export`,
             type: 'GET',
             xhrFields: {
                 responseType: 'blob'
             },
-            success: function(blob) {
-                const url = window.URL.createObjectURL(new Blob([blob]));
+            success: function(response, status, xhr) {
+                if (response.size === 0) {
+                    alert('No data available to export');
+                    return;
+                }
+    
+                const contentType = xhr.getResponseHeader('content-type');
+                if (contentType === 'application/json') {
+                    // Handle error response
+                    const reader = new FileReader();
+                    reader.onload = function() {
+                        const error = JSON.parse(this.result);
+                        alert(error.message || 'Error exporting data');
+                    };
+                    reader.readAsText(response);
+                    return;
+                }
+    
+                // Handle successful download
+                const blob = new Blob([response], { type: contentType });
+                const url = window.URL.createObjectURL(blob);
                 const link = document.createElement('a');
+                const filename = xhr.getResponseHeader('content-disposition')?.split('filename=')[1]?.replace(/"/g, '') || 
+                               `clean_data_export_${new Date().toISOString().slice(0,10)}.xlsx`;
+                
                 link.href = url;
-                link.setAttribute('download', `clean_data_export_${new Date().getTime()}.xlsx`);
+                link.download = filename;
                 document.body.appendChild(link);
                 link.click();
-                link.parentNode.removeChild(link);
+                document.body.removeChild(link);
                 window.URL.revokeObjectURL(url);
             },
             error: function(xhr) {
                 console.error('Export failed:', xhr);
-                alert('Error exporting data. Please try again.');
+                alert('Error exporting data. Please check the console for details.');
+            },
+            complete: function() {
+                button.prop('disabled', false).text('Export to Excel');
             }
         });
     });
@@ -591,6 +619,11 @@ function toggleDownloadMenu(fileId) {
 function downloadFile(fileId, type = 'raw') {
     const downloadUrl = `${API_URL}/files/${fileId}/download?type=${type}`;
     
+    // Show loading state
+    const button = $(`.download-btn[onclick="toggleDownloadMenu(${fileId})"]`);
+    const originalText = button.text();
+    button.prop('disabled', true).text('Downloading...');
+    
     $.ajax({
         url: downloadUrl,
         type: 'GET',
@@ -598,15 +631,16 @@ function downloadFile(fileId, type = 'raw') {
             responseType: 'blob'
         },
         success: function(response, status, xhr) {
+            const contentType = xhr.getResponseHeader('content-type');
+            
             // Check if response is an error message
-            if (response instanceof Blob && response.type === 'application/json') {
+            if (response.size === 0 || contentType === 'application/json') {
                 const reader = new FileReader();
                 reader.onload = function() {
                     try {
                         const error = JSON.parse(this.result);
-                        console.error('Download error:', error);
                         alert(error.message || 'Error downloading file');
-                    } catch (e) {
+                    } catch {
                         alert('Error downloading file');
                     }
                 };
@@ -614,37 +648,27 @@ function downloadFile(fileId, type = 'raw') {
                 return;
             }
 
-            // Create download link
-            const blob = new Blob([response], { type: xhr.getResponseHeader('content-type') });
+            // Create and trigger download
+            const blob = new Blob([response], { type: contentType });
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
+            const filename = xhr.getResponseHeader('content-disposition')?.split('filename=')[1]?.replace(/"/g, '') || 
+                           `${type}_data_${fileId}.xlsx`;
+            
             link.href = url;
-            
-            // Get filename from response headers or create default
-            const contentDisposition = xhr.getResponseHeader('content-disposition');
-            let filename;
-            if (contentDisposition && contentDisposition.includes('filename=')) {
-                filename = contentDisposition.split('filename=')[1].replace(/"/g, '');
-            } else {
-                filename = `${type}_data_${fileId}.xlsx`;
-            }
-            
-            link.setAttribute('download', filename);
+            link.download = filename;
             document.body.appendChild(link);
             link.click();
-            link.parentNode.removeChild(link);
+            document.body.removeChild(link);
             window.URL.revokeObjectURL(url);
         },
-        error: function(xhr, status, error) {
-            let errorMessage = 'Error downloading file';
-            try {
-                const response = JSON.parse(xhr.responseText);
-                errorMessage = response.message || errorMessage;
-            } catch (e) {
-                console.error('Parse error:', e);
-            }
+        error: function(xhr) {
             console.error('Download failed:', xhr);
-            alert(errorMessage);
+            alert('Error downloading file. Please check the console for details.');
+        },
+        complete: function() {
+            button.prop('disabled', false).text(originalText);
+            $('.download-menu').removeClass('show');
         }
     });
 }
