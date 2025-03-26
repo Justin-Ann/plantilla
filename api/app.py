@@ -412,12 +412,14 @@ def get_uploaded_files():
         cursor = connection.cursor(dictionary=True)
         
         if month_year:
+            # If month_year is specified, get files for that month
             cursor.execute("""
                 SELECT * FROM uploaded_files 
                 WHERE month_year = %s AND status = 'active'
                 ORDER BY upload_date DESC
             """, (month_year,))
         else:
+            # If no month_year, get all active files
             cursor.execute("""
                 SELECT * FROM uploaded_files 
                 WHERE status = 'active'

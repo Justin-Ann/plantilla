@@ -263,27 +263,35 @@ $(document).ready(function() {
 
 // Update all other API calls to use the new API_URL
 // Load dashboard counts
-function loadDashboardCounts(monthYear = null) {
-    if (!monthYear) {
-        const now = new Date();
-        monthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    }
-    
+function loadDashboardCounts() {
     $.ajax({
-        url: `${API_URL}/uploaded-files?month_year=${monthYear}`,
+        url: `${API_URL}/uploaded-files`,
         type: 'GET',
         success: function(response) {
             if (response.success && response.files.length > 0) {
-                // Get the most recent file's content for status counts
-                const latestFile = response.files[0];
-                $.ajax({
-                    url: `${API_URL}/files/${latestFile.id}/content`,
-                    type: 'GET',
-                    success: function(contentResponse) {
-                        if (contentResponse.success) {
-                            updateStatusCounts(contentResponse.data);
+                let allFilesData = [];
+                let completedRequests = 0;
+                
+                // Get content from all active files
+                response.files.forEach(file => {
+                    $.ajax({
+                        url: `${API_URL}/files/${file.id}/content`,
+                        type: 'GET',
+                        success: function(contentResponse) {
+                            if (contentResponse.success) {
+                                allFilesData = allFilesData.concat(contentResponse.data);
+                            }
+                            completedRequests++;
+                            
+                            // When all requests are complete, update counts
+                            if (completedRequests === response.files.length) {
+                                updateStatusCounts(allFilesData);
+                            }
+                        },
+                        error: function() {
+                            completedRequests++;
                         }
-                    }
+                    });
                 });
             }
         }
@@ -977,12 +985,23 @@ function updateStatusCounts(data) {
         'Not yet for filling': 0
     };
     
+    // Count unique records by plantilla_no to avoid duplicates
+    const uniqueRecords = new Map();
     data.forEach(row => {
-        if (row.status in counts) {
-            counts[row.status]++;
+        // Use plantilla_no as key to ensure uniqueness
+        if (row.plantilla_no && row.status) {
+            uniqueRecords.set(row.plantilla_no, row.status);
         }
     });
     
+    // Count statuses from unique records
+    uniqueRecords.forEach(status => {
+        if (status in counts) {
+            counts[status]++;
+        }
+    });
+    
+    // Update the dashboard counts
     $('#on-process .count').text(counts['On-process']);
     $('#on-hold .count').text(counts['On-hold']);
     $('#not-yet-filling .count').text(counts['Not yet for filling']);
