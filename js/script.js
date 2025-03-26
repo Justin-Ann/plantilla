@@ -548,6 +548,11 @@ function createDropdownOptions(type) {
                 <option value="Female">Female</option>
                 <option value="Others">Others</option>
             `;
+        case 'appointment_status':
+            return `
+                <option value="PERMANENT">PERMANENT</option>
+                <option value="TEMPORARY">TEMPORARY</option>
+            `;
         case 'status':
             return `
                 <option value="Active">Active</option>
@@ -744,6 +749,8 @@ function showFileEditor(fileId, data, fileInfo) {
                         editorType = 'status';
                     } else if (headerLower.match(/date|birth|promotion|increment|longevity/)) {
                         editorType = 'date';
+                    } else if (headerLower.match(/appointment.*status/)) {
+                        editorType = 'appointment_status';
                     }
 
                     if (editorType) {
