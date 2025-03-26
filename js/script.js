@@ -560,21 +560,33 @@ function createDropdownOptions(type) {
 }
 
 function showEditor(cell, type, currentValue) {
-    // Keep the original text content
-    const originalContent = cell.text();
+    // Remove any existing editors
+    $('.editor-cell-select').remove();
     
-    // Create editor element based on type
-    let editor;
+    const position = cell.position();
+    const width = cell.width();
+    const height = cell.height();
+    
+    // Store original content
+    const originalContent = cell.text().trim();
     
     if (type === 'date') {
-        editor = $('<input>')
+        const input = $('<input>')
             .attr({
                 type: 'date',
                 value: currentValue
             })
+            .css({
+                position: 'absolute',
+                left: position.left,
+                top: position.top,
+                width: width,
+                height: height,
+                zIndex: 1000
+            })
             .addClass('editor-cell-select');
         
-        editor.on('change blur', function(e) {
+        input.on('change blur', function(e) {
             const newValue = $(this).val();
             if (newValue && newValue !== currentValue) {
                 cell.text(newValue);
@@ -583,12 +595,25 @@ function showEditor(cell, type, currentValue) {
             }
             $(this).remove();
         });
-    } else {
-        editor = $('<select>').addClass('editor-cell-select')
-            .html(createDropdownOptions(type))
-            .val(currentValue || '');
         
-        editor.on('change blur', function(e) {
+        cell.parent().append(input);
+        input.focus();
+        
+    } else {
+        const select = $('<select>')
+            .html(createDropdownOptions(type))
+            .css({
+                position: 'absolute',
+                left: position.left,
+                top: position.top,
+                width: width,
+                height: height,
+                zIndex: 1000
+            })
+            .addClass('editor-cell-select')
+            .val(currentValue);
+        
+        select.on('change blur', function(e) {
             const newValue = $(this).val();
             if (newValue && newValue !== currentValue) {
                 cell.text(newValue);
@@ -597,11 +622,10 @@ function showEditor(cell, type, currentValue) {
             }
             $(this).remove();
         });
+        
+        cell.parent().append(select);
+        select.focus();
     }
-    
-    // Show the editor while keeping original content
-    cell.append(editor);
-    editor.focus();
 }
 
 function searchInFile() {
@@ -700,46 +724,32 @@ function showFileEditor(fileId, data, fileInfo) {
                 // Add click handler
                 cell.on('click', function(e) {
                     e.stopPropagation();
+                    e.preventDefault();
+                    
                     const currentValue = $(this).text().trim();
-                    
-                    // Remove any existing editors
-                    $('.editor-cell-select').remove();
-                    
-                    // Determine editor type
                     let editorType;
+                    
                     const headerLower = header.toLowerCase();
                     
-                    if (headerLower.includes('sg')) {
+                    // Improved type detection
+                    if (headerLower.match(/sg|salary.?grade/)) {
                         editorType = 'sg';
-                    } else if (headerLower.includes('step')) {
+                    } else if (headerLower.match(/step/)) {
                         editorType = 'step';
-                    } else if (headerLower.includes('level')) {
+                    } else if (headerLower.match(/level/)) {
                         editorType = 'level';
-                    } else if (headerLower.includes('sex')) {
+                    } else if (headerLower.match(/sex|gender/)) {
                         editorType = 'sex';
-                    } else if (headerLower.includes('status')) {
+                    } else if (headerLower.match(/status/)) {
                         editorType = 'status';
-                    } else if (headerLower.includes('date')) {
+                    } else if (headerLower.match(/date|birth|promotion|increment|longevity/)) {
                         editorType = 'date';
-                    } else if (headerLower.includes('salary') || 
-                             headerLower.includes('wage') ||
-                             headerLower.includes('pay')) {
-                        editorType = 'salary';
                     }
 
                     if (editorType) {
                         showEditor($(this), editorType, currentValue);
                     } else {
-                        // Make regular cell editable while preserving content
-                        const originalContent = $(this).text();
-                        $(this).attr('contenteditable', 'true')
-                            .focus()
-                            .on('blur', function() {
-                                if (!$(this).text().trim()) {
-                                    $(this).text(originalContent);
-                                }
-                                $(this).removeAttr('contenteditable');
-                            });
+                        makeEditable($(this));
                     }
                 });
 
@@ -801,4 +811,17 @@ function showFileEditor(fileId, data, fileInfo) {
         console.error('Error building table:', error);
         alert('Error building table: ' + error.message);
     }
+}
+
+// Helper function to make cells editable
+function makeEditable(cell) {
+    const originalContent = cell.text().trim();
+    cell.attr('contenteditable', 'true')
+        .focus()
+        .on('blur', function() {
+            if (!$(this).text().trim()) {
+                $(this).text(originalContent);
+            }
+            $(this).removeAttr('contenteditable');
+        });
 }
