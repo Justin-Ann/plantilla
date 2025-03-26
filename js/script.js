@@ -603,7 +603,34 @@ function editFile(fileId) {
 
 // Function to download file with proper error handling
 function downloadFile(fileId) {
-    window.location.href = `${API_URL}/files/${fileId}/download`;
+    $.ajax({
+        url: `${API_URL}/files/${fileId}/download`,
+        type: 'GET',
+        xhrFields: {
+            responseType: 'blob'
+        },
+        success: function(blob) {
+            // Create blob link to download
+            const url = window.URL.createObjectURL(new Blob([blob]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `export_${fileId}.xlsx`); 
+            
+            // Append to html link element page
+            document.body.appendChild(link);
+            
+            // Start download
+            link.click();
+            
+            // Clean up and remove the link
+            link.parentNode.removeChild(link);
+            window.URL.revokeObjectURL(url);
+        },
+        error: function(xhr) {
+            console.error('Download failed:', xhr);
+            alert('Error downloading file. Please try again.');
+        }
+    });
 }
 
 function createDropdownOptions(type) {

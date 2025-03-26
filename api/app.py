@@ -795,38 +795,46 @@ def download_file(file_id):
     try:
         connection = connect_to_database()
         cursor = connection.cursor(dictionary=True)
+        
+        # Get file content from database/file system
         cursor.execute("SELECT * FROM uploaded_files WHERE id = %s", (file_id,))
         file_info = cursor.fetchone()
         
         if not file_info:
             return jsonify({'success': False, 'message': 'File not found'}), 404
-            
-        # Get the correct file path
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        file_path = os.path.join(base_dir, 'uploads', os.path.basename(file_info['file_path']))
         
-        if not os.path.exists(file_path):
-            return jsonify({'success': False, 'message': 'File not found on server'}), 404
-            
+        # Read the file content
         try:
-            # Set correct MIME type based on file extension
-            mime_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-            if file_path.endswith('.xls'):
-                mime_type = 'application/vnd.ms-excel'
-            elif file_path.endswith('.csv'):
-                mime_type = 'text/csv'
-
-            return send_file(
-                file_path,
-                mimetype=mime_type,
-                as_attachment=True,
-                download_name=file_info['original_filename'],
-                max_age=0  # Prevent caching
-            )
+            if file_info['file_path'].endswith('.csv'):
+                df = pd.read_csv(file_info['file_path'])
+            else:
+                df = pd.read_excel(file_info['file_path'])
             
+            # Create a temporary file for download
+            temp_filename = f"export_{file_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+            temp_filepath = os.path.join(app.config['UPLOAD_FOLDER'], temp_filename)
+            
+            # Export to Excel
+            df.to_excel(temp_filepath, index=False, engine='openpyxl')
+            
+            try:
+                return send_file(
+                    temp_filepath,
+                    mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    as_attachment=True,
+                    download_name=f"{os.path.splitext(file_info['original_filename'])[0]}.xlsx"
+                )
+            finally:
+                # Clean up temp file after sending
+                if os.path.exists(temp_filepath):
+                    try:
+                        os.remove(temp_filepath)
+                    except:
+                        pass
+                        
         except Exception as e:
-            print(f"Error sending file: {str(e)}")
-            return jsonify({'success': False, 'message': 'Error sending file'}), 500
+            print(f"Error processing file: {str(e)}")
+            return jsonify({'success': False, 'message': 'Error processing file'}), 500
             
     except Exception as e:
         print(f"Error in download_file: {str(e)}")
