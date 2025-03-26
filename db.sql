@@ -111,3 +111,11 @@ CREATE TABLE uploaded_files (
     user_id INT,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
+
+ALTER TABLE uploaded_files 
+ADD COLUMN last_modified TIMESTAMP NULL DEFAULT NULL;
+
+-- Update existing records to set last_modified same as upload_date
+UPDATE uploaded_files 
+SET last_modified = upload_date 
+WHERE last_modified IS NULL;

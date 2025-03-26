@@ -468,10 +468,14 @@ function loadUploadedFiles(monthYear) {
                 const tableBody = $('#uploaded-files-table tbody');
                 tableBody.empty();
                 response.files.forEach(function(file) {
+                    const uploadDate = new Date(file.upload_date).toLocaleString();
+                    const lastModified = file.last_modified ? new Date(file.last_modified).toLocaleString() : 'Never';
+                    
                     tableBody.append(`
                         <tr>
                             <td>${file.original_filename}</td>
-                            <td>${file.upload_date}</td>
+                            <td>${uploadDate}</td>
+                            <td>${lastModified}</td>
                             <td>
                                 <button class="action-btn edit-btn" onclick="editFile(${file.id})">Edit</button>
                                 <button class="action-btn delete-btn" onclick="deleteFile(${file.id})">Delete</button>
