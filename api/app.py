@@ -641,6 +641,15 @@ def update_file_content(file_id):
     
     try:
         cursor = connection.cursor(dictionary=True)
+        
+        # Update last_modified timestamp
+        cursor.execute("""
+            UPDATE uploaded_files 
+            SET last_modified = CURRENT_TIMESTAMP 
+            WHERE id = %s
+        """, (file_id,))
+        
+        # Get file info
         cursor.execute("SELECT * FROM uploaded_files WHERE id = %s", (file_id,))
         file_info = cursor.fetchone()
         
@@ -657,15 +666,19 @@ def update_file_content(file_id):
         else:
             df.to_excel(file_info['file_path'], index=False)
         
-        # Reprocess the updated file
+        # Process the updated file
         success, message = process_raw_data(file_info['file_path'])
         
         if success:
+            connection.commit()  # Commit the timestamp update
             return jsonify({'success': True, 'message': 'File updated and processed successfully'})
         else:
+            connection.rollback()
             return jsonify({'success': False, 'message': message})
             
     except Exception as e:
+        if connection:
+            connection.rollback()
         return jsonify({'success': False, 'message': str(e)})
     finally:
         if connection:
