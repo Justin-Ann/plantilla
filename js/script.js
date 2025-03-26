@@ -560,65 +560,87 @@ function createDropdownOptions(type) {
 }
 
 function showEditor(cell, type, currentValue) {
-    // Remove any existing editors
-    $('.edit-dropdown').remove();
-    $('td').removeClass('editing');
+    // Keep the original text content
+    const originalContent = cell.text();
     
-    cell.addClass('editing');
+    // Create editor element based on type
+    let editor;
     
     if (type === 'date') {
-        const input = $('<input>')
+        editor = $('<input>')
             .attr({
                 type: 'date',
                 value: currentValue
             })
             .addClass('editor-cell-select');
         
-        input.on('change blur', function() {
-            cell.text($(this).val()).removeClass('editing');
-            $(this).remove();
-        });
-        
-        cell.empty().append(input);
-        input.focus();
-    }
-    else if (type === 'salary') {
-        const input = $('<input>')
-            .attr({
-                type: 'number',
-                value: currentValue.replace(/[^0-9.]/g, ''),
-                step: '0.01'
-            })
-            .addClass('editor-cell-select');
-        
-        input.on('change blur', function() {
-            const value = parseFloat($(this).val() || 0).toLocaleString('en-PH', {
-                style: 'currency',
-                currency: 'PHP'
-            });
-            cell.text(value).removeClass('editing');
-            $(this).remove();
-        });
-        
-        cell.empty().append(input);
-        input.focus();
-    }
-    else {
-        const dropdown = $('<div>')
-            .addClass('edit-dropdown')
-            .append(`<select>${createDropdownOptions(type)}</select>`);
-        
-        const select = dropdown.find('select').val(currentValue);
-        
-                select.on('change blur', function() {
-                    cell.text($(this).val()).removeClass('editing');
-                    dropdown.remove();
-                });
-                
-                cell.empty().append(dropdown);
-                select.focus();
+        editor.on('change blur', function(e) {
+            const newValue = $(this).val();
+            if (newValue && newValue !== currentValue) {
+                cell.text(newValue);
+            } else {
+                cell.text(originalContent);
             }
+            $(this).remove();
+        });
+    } else {
+        editor = $('<select>').addClass('editor-cell-select')
+            .html(createDropdownOptions(type))
+            .val(currentValue || '');
+        
+        editor.on('change blur', function(e) {
+            const newValue = $(this).val();
+            if (newValue && newValue !== currentValue) {
+                cell.text(newValue);
+            } else {
+                cell.text(originalContent);
+            }
+            $(this).remove();
+        });
+    }
+    
+    // Show the editor while keeping original content
+    cell.append(editor);
+    editor.focus();
+}
+
+function searchInFile() {
+    const searchTerm = $('#file-search').val().toLowerCase();
+    let found = false;
+    
+    $('#file-editor-table tbody tr').each(function() {
+        const row = $(this);
+        const text = row.text().toLowerCase();
+        
+        // Remove existing highlights
+        row.find('td').removeClass('highlight');
+        
+        if (text.includes(searchTerm)) {
+            found = true;
+            row.show();
+            // Highlight matching cells
+            row.find('td').each(function() {
+                const cell = $(this);
+                const cellText = cell.text().toLowerCase();
+                if (cellText.includes(searchTerm)) {
+                    cell.addClass('highlight');
+                }
+            });
+        } else {
+            row.hide();
         }
+    });
+    
+    if (!found && searchTerm) {
+        alert('No matches found');
+    }
+}
+
+function clearSearch() {
+    $('#file-search').val('');
+    $('#file-editor-table tbody tr').show();
+    $('#file-editor-table td').removeClass('highlight');
+}
 
 function showFileEditor(fileId, data, fileInfo) {
     if (!data || !Array.isArray(data) || data.length === 0) {
@@ -679,38 +701,58 @@ function showFileEditor(fileId, data, fileInfo) {
                 cell.on('click', function(e) {
                     e.stopPropagation();
                     const currentValue = $(this).text().trim();
+                    
+                    // Remove any existing editors
+                    $('.editor-cell-select').remove();
+                    
+                    // Determine editor type
                     let editorType;
-
-                    // Determine editor type based on header and content
-                    if (header.toLowerCase().includes('sg')) {
+                    const headerLower = header.toLowerCase();
+                    
+                    if (headerLower.includes('sg')) {
                         editorType = 'sg';
-                    } else if (header.toLowerCase().includes('step')) {
+                    } else if (headerLower.includes('step')) {
                         editorType = 'step';
-                    } else if (header.toLowerCase().includes('level')) {
+                    } else if (headerLower.includes('level')) {
                         editorType = 'level';
-                    } else if (header.toLowerCase().includes('sex')) {
+                    } else if (headerLower.includes('sex')) {
                         editorType = 'sex';
-                    } else if (header.toLowerCase().includes('status')) {
+                    } else if (headerLower.includes('status')) {
                         editorType = 'status';
-                    } else if (header.toLowerCase().includes('date')) {
+                    } else if (headerLower.includes('date')) {
                         editorType = 'date';
-                    } else if (header.toLowerCase().includes('salary') || 
-                             header.toLowerCase().includes('wage') ||
-                             header.toLowerCase().includes('pay')) {
+                    } else if (headerLower.includes('salary') || 
+                             headerLower.includes('wage') ||
+                             headerLower.includes('pay')) {
                         editorType = 'salary';
                     }
 
                     if (editorType) {
                         showEditor($(this), editorType, currentValue);
                     } else {
-                        // Make regular cell editable
-                        $(this).attr('contenteditable', 'true').focus();
+                        // Make regular cell editable while preserving content
+                        const originalContent = $(this).text();
+                        $(this).attr('contenteditable', 'true')
+                            .focus()
+                            .on('blur', function() {
+                                if (!$(this).text().trim()) {
+                                    $(this).text(originalContent);
+                                }
+                                $(this).removeAttr('contenteditable');
+                            });
                     }
                 });
 
                 tableRow.append(cell);
             });
             table.find('tbody').append(tableRow);
+        });
+
+        // Bind search functionality
+        $('#file-search').off('keyup').on('keyup', function(e) {
+            if (e.key === 'Enter') {
+                searchInFile();
+            }
         });
 
         // Handle save
