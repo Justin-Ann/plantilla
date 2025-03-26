@@ -864,7 +864,7 @@ def download_file(file_id):
             connection.close()
 
 @app.route('/api/clean-data/export', methods=['GET'])
-def export_clean_data():
+def export_clean_data_excel():
     try:
         connection = connect_to_database()
         cursor = connection.cursor(dictionary=True)
