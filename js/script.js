@@ -130,7 +130,27 @@ $(document).ready(function() {
     
     // Export button
     $('#export-btn').on('click', function() {
-        window.location.href = `${API_URL}/api/export-clean-data`;
+        $.ajax({
+            url: `${API_URL}/clean-data/export`,
+            type: 'GET',
+            xhrFields: {
+                responseType: 'blob'
+            },
+            success: function(blob) {
+                const url = window.URL.createObjectURL(new Blob([blob]));
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', `clean_data_export_${new Date().getTime()}.xlsx`);
+                document.body.appendChild(link);
+                link.click();
+                link.parentNode.removeChild(link);
+                window.URL.revokeObjectURL(url);
+            },
+            error: function(xhr) {
+                console.error('Export failed:', xhr);
+                alert('Error exporting data. Please try again.');
+            }
+        });
     });
     
     // Applicant search
@@ -569,10 +589,11 @@ function toggleDownloadMenu(fileId) {
 
 // Update download function to handle different types
 function downloadFile(fileId, type = 'raw') {
+    const downloadUrl = `${API_URL}/files/${fileId}/download?type=${type}`;
+    
     $.ajax({
-        url: `${API_URL}/files/${fileId}/download`,
+        url: downloadUrl,
         type: 'GET',
-        data: { type: type },
         xhrFields: {
             responseType: 'blob'
         },
@@ -580,7 +601,10 @@ function downloadFile(fileId, type = 'raw') {
             const url = window.URL.createObjectURL(new Blob([blob]));
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', `export_${fileId}_${type}.xlsx`);
+            const filename = type === 'raw' ? 
+                `raw_data_${fileId}.xlsx` : 
+                `clean_data_${fileId}.xlsx`;
+            link.setAttribute('download', filename);
             document.body.appendChild(link);
             link.click();
             link.parentNode.removeChild(link);
@@ -588,17 +612,10 @@ function downloadFile(fileId, type = 'raw') {
         },
         error: function(xhr) {
             console.error('Download failed:', xhr);
-            alert('Error downloading file. Please try again.');
+            alert('Error downloading file. Please check the console for details.');
         }
     });
 }
-
-// Close download menus when clicking outside
-$(document).on('click', function(e) {
-    if (!$(e.target).closest('.dropdown').length) {
-        $('.download-menu').removeClass('show');
-    }
-});
 
 function createDropdownOptions(type) {
     switch(type) {

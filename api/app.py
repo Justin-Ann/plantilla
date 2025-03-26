@@ -863,5 +863,65 @@ def download_file(file_id):
             cursor.close()
             connection.close()
 
+@app.route('/api/clean-data/export', methods=['GET'])
+def export_clean_data():
+    try:
+        connection = connect_to_database()
+        cursor = connection.cursor(dictionary=True)
+        
+        # Get all clean data
+        cursor.execute("""
+            SELECT 
+                cd.plantilla_no,
+                cd.plantilla_division,
+                cd.position_title,
+                cd.sg,
+                cd.remarks,
+                cd.date_published,
+                cd.status,
+                cd.date_vacated,
+                cd.vacated_due_to,
+                cd.vacated_by
+            FROM clean_data cd
+            ORDER BY cd.plantilla_no
+        """)
+        data = cursor.fetchall()
+        
+        if not data:
+            return jsonify({'success': False, 'message': 'No data to export'}), 404
+        
+        # Create DataFrame and export to Excel
+        df = pd.DataFrame(data)
+        
+        # Create temporary file
+        temp_filename = f"clean_data_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        temp_filepath = os.path.join(app.config['UPLOAD_FOLDER'], temp_filename)
+        
+        # Export to Excel with proper formatting
+        df.to_excel(temp_filepath, index=False, engine='openpyxl')
+        
+        try:
+            return send_file(
+                temp_filepath,
+                mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                as_attachment=True,
+                download_name=f"clean_data_export.xlsx"
+            )
+        finally:
+            # Clean up temp file after sending
+            if os.path.exists(temp_filepath):
+                try:
+                    os.remove(temp_filepath)
+                except:
+                    pass
+                    
+    except Exception as e:
+        print(f"Error exporting data: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        if connection:
+            cursor.close()
+            connection.close()
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
