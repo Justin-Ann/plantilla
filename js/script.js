@@ -736,8 +736,10 @@ function showFileEditor(fileId, data, fileInfo) {
                     
                     const headerLower = header.toLowerCase();
                     
-                    // Improved type detection
-                    if (headerLower.match(/sg|salary.?grade/)) {
+                    // Improved type detection with specific check for appointment status
+                    if (headerLower.includes('appointment') && headerLower.includes('status')) {
+                        editorType = 'appointment_status';  // Use special type for appointment status
+                    } else if (headerLower.match(/sg|salary.?grade/)) {
                         editorType = 'sg';
                     } else if (headerLower.match(/step/)) {
                         editorType = 'step';
@@ -745,12 +747,10 @@ function showFileEditor(fileId, data, fileInfo) {
                         editorType = 'level';
                     } else if (headerLower.match(/sex|gender/)) {
                         editorType = 'sex';
-                    } else if (headerLower.match(/status/)) {
-                        editorType = 'status';
+                    } else if (headerLower.includes('status') && !headerLower.includes('appointment')) {
+                        editorType = 'status';  // Regular status dropdown for non-appointment status
                     } else if (headerLower.match(/date|birth|promotion|increment|longevity/)) {
                         editorType = 'date';
-                    } else if (headerLower.match(/appointment.*status/)) {
-                        editorType = 'appointment_status';
                     }
 
                     if (editorType) {
