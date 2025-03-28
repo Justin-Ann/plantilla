@@ -80,28 +80,19 @@
                 </div>
                 
                 <div id="raw-data-content" class="tab-content active">
-                    <div class="upload-section">
-                        <h3>Upload Raw Data</h3>
-                        <form id="upload-form" enctype="multipart/form-data">
-                            <input type="file" name="file" accept=".xlsx,.xls,.csv">
-                            <button type="submit">Upload</button>
-                        </form>
-                    </div>
-                    
                     <div class="data-table">
+                        <div class="table-toolbar">
+                            <input type="text" id="raw-data-search" placeholder="Search in file...">
+                            <button id="export-raw-btn" class="action-btn">Export</button>
+                        </div>
                         <table id="raw-data-table">
                             <thead>
                                 <tr>
                                     <th>PLANTILLA NO.</th>
                                     <th>PLANTILLADIVISION</th>
-                                    <th>PLANTILLA SECTIONDEFINITION</th>
-                                    <th>EQUIVALENTDIVISION</th>
-                                    <th>POSITION TITLE</th>
-                                    <th>ITEM NUMBER</th>
-                                    <th>SG</th>
-                                    <th>DATEVACATED</th>
-                                    <th>VACATED DUE TO</th>
-                                    <th>VACATED BY</th>
+                                    <th>PLANTILLASECTION/STATION</th>
+                                    <!-- Add all required columns -->
+                                    <!-- ...rest of headers... -->
                                 </tr>
                             </thead>
                             <tbody></tbody>

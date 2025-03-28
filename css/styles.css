@@ -694,6 +694,50 @@ td select:focus, td input:focus {
     color: #666;
 }
 
+/* Add styles for the raw data editor */
+.raw-data-editor {
+    margin-top: 20px;
+}
+
+.table-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: var(--light-color);
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#raw-data-search {
+    min-width: 250px;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+.cell-editor {
+    width: 100%;
+    padding: 4px;
+    border: none;
+    background: white;
+}
+
+.cell-editor:focus {
+    outline: none;
+    background: #f8f9fa;
+}
+
+td[data-type] {
+    position: relative;
+}
+
+td[data-type]:hover {
+    background-color: #f8f9fa;
+    cursor: pointer;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .container {

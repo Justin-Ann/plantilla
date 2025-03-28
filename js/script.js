@@ -1349,3 +1349,75 @@ function showCurrencyEditor(cell) {
 function formatCurrency(value) {
     return '₱' + parseFloat(value).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
+
+function loadRawDataContent(fileId) {
+    $.ajax({
+        url: `${API_URL}/files/${fileId}/content`,
+        method: 'GET',
+        success: function(response) {
+            if (response.success) {
+                const data = response.data;
+                const tableBody = $('#raw-data-table tbody');
+                tableBody.empty();
+                
+                // Create table headers based on data columns
+                const headers = [
+                    'PLANTILLA NO.', 'PLANTILLADIVISION', 'PLANTILLASECTION/STATION',
+                    'EQUIVALENTDIVISION', 'PLANTILLA DIVISIONDEFINITION', 'PLANTILLA SECTIONDEFINITION',
+                    'FULLNAME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'EXTNAME', 'MI',
+                    'SEX', 'POSITION TITLE', 'ITEM NUMBER', 'TECHCODE', 'LEVEL',
+                    'APPOINTMENTSTATUS', 'SG', 'STEP', 'MONTHLYSALARY',
+                    'DATE OFBIRTH', 'DATEORIG. APPT.', 'DATEGOVT SRVC',
+                    'DATELASTPROMOTION', 'DATELAST INCREMENT', 'DATE OFLONGEVITY',
+                    'DATEVACATED', 'VACATED DUE TO', 'VACATED BY', 'ID NO.'
+                ];
+
+                const headerRow = $('<tr>');
+                headers.forEach(header => {
+                    headerRow.append(`<th>${header}</th>`);
+                });
+                $('#raw-data-table thead').html(headerRow);
+
+                // Add data rows
+                data.forEach(row => {
+                    const tr = $('<tr>');
+                    headers.forEach(header => {
+                        const td = $('<td>').attr('data-type', getColumnType(header));
+                        td.text(row[header] || '');
+                        tr.append(td);
+                    });
+                    tableBody.append(tr);
+                });
+
+                // Initialize editors for editable cells
+                initializeEditors($('#raw-data-table'));
+            }
+        }
+    });
+}
+
+function getColumnType(header) {
+    if (header.match(/sex/i)) return 'sex';
+    if (header.match(/appointmentstatus/i)) return 'appointment_status';
+    if (header === 'SG') return 'sg';
+    if (header === 'STEP') return 'step';
+    if (header === 'LEVEL') return 'level';
+    if (header.match(/DATE|BIRTH|PROMOTION|INCREMENT|LONGEVITY|VACATED/i)) return 'date';
+    if (header === 'MONTHLYSALARY') return 'currency';
+    if (header === 'VACATED DUE TO') return 'vacated_due_to';
+    return 'text';
+}
+
+// Update showFilteredData to handle the status card clicks
+function showFilteredData(status) {
+    // Navigate to data management page
+    $('.nav-menu a[data-page="data-management"]').click();
+    
+    // Switch to clean data tab
+    $('.tab[data-tab="clean-data"]').click();
+    
+    // Set the status filter and load data
+    $('#status-filter').val(status).trigger('change');
+}
+
+// ...rest of existing code...
