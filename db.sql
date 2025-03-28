@@ -14,10 +14,11 @@ CREATE TABLE IF NOT EXISTS users (
 
 -- Insert admin user
 INSERT INTO users (username, password, role) 
-VALUES ('admin', '$2y$10$8OxDJT4rZQp0tOHXGIX0HeWJA9UR.YG7TAq3OPz1pLzz7KxVISB2a', 'admin');
+VALUES ('admin', '$2y$10$8OxDJT4rZQp0tOHXGIX0HeWJA9UR.YG7TAq3OPz1pLzz7KxVISB2a', 'admin')
+ON DUPLICATE KEY UPDATE username=username;
 
 -- Create uploaded_files table
-CREATE TABLE uploaded_files (
+CREATE TABLE IF NOT EXISTS uploaded_files (
     id INT AUTO_INCREMENT PRIMARY KEY,
     filename VARCHAR(255),
     original_filename VARCHAR(255),
@@ -32,20 +33,24 @@ CREATE TABLE uploaded_files (
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
+-- Add unique index to prevent duplicate records
+ALTER TABLE uploaded_files 
+ADD UNIQUE INDEX idx_month_file (month_year, original_filename);
+
 -- Create raw_data table
-CREATE TABLE raw_data (
+CREATE TABLE IF NOT EXISTS raw_data (
     id INT AUTO_INCREMENT PRIMARY KEY,
     plantilla_no VARCHAR(50),
     file_id INT NULL,
     plantilla_division VARCHAR(100),
     plantilla_section VARCHAR(100),
-    plantilla_sectiondefinition VARCHAR(100),
+    plantilla_division_definition VARCHAR(100),
     equivalent_division VARCHAR(100),
     position_title VARCHAR(100),
     item_number VARCHAR(50),
     sg INT CHECK (sg BETWEEN 1 AND 100),
     date_vacated DATE,
-    vacated_due_to ENUM('PROMOTION', 'COMPULSORY RETIREMENT', 'RESIGNATION', 'SWAPPING OF ITEM', 'TRANSFER'),
+    vacated_due_to ENUM('PROMOTION', 'COMPULSORY RETIREMENT', 'RESIGNATION', 'SWAPPING OF ITEM', 'TRANSFER') NULL,
     vacated_by VARCHAR(100),
     fullname VARCHAR(100),
     last_name VARCHAR(50),
@@ -78,11 +83,12 @@ CREATE TABLE raw_data (
 ) ENGINE=InnoDB;
 
 -- Create clean_data table
-CREATE TABLE clean_data (
+CREATE TABLE IF NOT EXISTS clean_data (
     id INT AUTO_INCREMENT PRIMARY KEY,
     plantilla_no VARCHAR(50) UNIQUE,
     plantilla_division VARCHAR(100),
-    plantilla_sectiondefinition VARCHAR(100),
+    plantilla_section VARCHAR(100),
+    plantilla_division_definition VARCHAR(100),
     equivalent_division VARCHAR(100),
     position_title VARCHAR(100),
     item_number VARCHAR(50),
@@ -98,7 +104,7 @@ CREATE TABLE clean_data (
 );
 
 -- Create applicants table
-CREATE TABLE applicants (
+CREATE TABLE IF NOT EXISTS applicants (
     id INT AUTO_INCREMENT PRIMARY KEY,
     fullname VARCHAR(100),
     sex ENUM('Male', 'Female', 'Others'),
@@ -130,6 +136,18 @@ BEGIN
     IF NEW.monthly_salary != OLD.monthly_salary THEN
         SET NEW.monthly_salary_formatted = CONCAT('₱', FORMAT(NEW.monthly_salary, 2));
     END IF;
+END//
+DELIMITER ;
+
+-- Add trigger to update clean_data status
+DELIMITER //
+CREATE TRIGGER update_clean_data_status
+AFTER UPDATE ON raw_data
+FOR EACH ROW
+BEGIN
+    UPDATE clean_data 
+    SET status = 'On-process' 
+    WHERE raw_data_id = NEW.id;
 END//
 DELIMITER ;
 

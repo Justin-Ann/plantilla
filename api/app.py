@@ -620,7 +620,7 @@ def get_file_content(file_id):
                           'DATE LAST INCREMENT', 'DATE OF LONGEVITY']
             
             for col in df.columns:
-                if col in date_columns:
+                if (col in date_columns):
                     df[col] = df[col].apply(lambda x: format_date_string(x) if x else '')
             
             return jsonify({
@@ -965,14 +965,61 @@ def get_status_counts():
     cursor = connection.cursor(dictionary=True)
     
     try:
+        # Count status across all monthly files
         cursor.execute("""
             SELECT status, COUNT(*) as count 
-            FROM clean_data 
-            GROUP BY status
+            FROM clean_data cd
+            JOIN raw_data rd ON cd.raw_data_id = rd.id
+            JOIN uploaded_files uf ON rd.file_id = uf.id
+            WHERE uf.status = 'active'
+            GROUP BY cd.status
         """)
         
         counts = {row['status']: row['count'] for row in cursor.fetchall()}
         return jsonify({'success': True, 'counts': counts})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        if connection:
+            cursor.close()
+            connection.close()
+
+@app.route('/api/raw-data/edit/<int:file_id>', methods=['GET'])
+def get_raw_data_edit(file_id):
+    connection = connect_to_database()
+    try:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT * FROM raw_data 
+            WHERE file_id = %s AND is_latest = TRUE
+            ORDER BY plantilla_no
+        """, (file_id,))
+        
+        data = cursor.fetchall()
+        return jsonify({'success': True, 'data': data})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        if connection:
+            cursor.close()
+            connection.close()
+
+@app.route('/api/dashboard/recent-files', methods=['GET'])
+def get_recent_files():
+    connection = connect_to_database()
+    cursor = connection.cursor(dictionary=True)
+    
+    try:
+        cursor.execute("""
+            SELECT id, filename, last_modified 
+            FROM uploaded_files 
+            WHERE status = 'active'
+            ORDER BY last_modified DESC 
+            LIMIT 5
+        """)
+        
+        files = cursor.fetchall()
+        return jsonify({'success': True, 'files': files})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
     finally:
@@ -1013,29 +1060,6 @@ def health_check():
         return jsonify({'success': False, 'message': 'Database connection failed'}), 500
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
-
-@app.route('/api/dashboard/recent-files', methods=['GET'])
-def get_recent_files():
-    connection = connect_to_database()
-    cursor = connection.cursor(dictionary=True)
-    
-    try:
-        cursor.execute("""
-            SELECT id, filename, last_modified 
-            FROM uploaded_files 
-            WHERE status = 'active'
-            ORDER BY last_modified DESC 
-            LIMIT 5
-        """)
-        
-        files = cursor.fetchall()
-        return jsonify({'success': True, 'files': files})
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)})
-    finally:
-        if connection:
-            cursor.close()
-            connection.close()
 
 @app.route('/api/export/<type>', methods=['GET'])
 def export_data(type):

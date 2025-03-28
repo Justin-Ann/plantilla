@@ -24,6 +24,7 @@
         <div class="main-content">
             <div id="dashboard" class="page active">
                 <h2>Dashboard</h2>
+                <!-- Status Cards -->
                 <div class="status-cards">
                     <div class="card clickable" id="on-process" onclick="showFilteredData('On-process')">
                         <h3>On-process</h3>
@@ -38,15 +39,19 @@
                         <p class="count">0</p>
                     </div>
                 </div>
-                
-                <!-- Monthly Summary Section -->
-                <div class="monthly-summary">
-                    <h3>Monthly Files</h3>
-                    <div class="month-picker">
-                        <input type="month" id="month-picker">
+
+                <!-- Monthly Files Section -->
+                <div class="monthly-files">
+                    <div class="section-header">
+                        <h3>Monthly Files</h3>
+                        <div class="controls">
+                            <input type="month" id="month-picker">
+                            <button id="upload-btn" class="action-btn">Upload File</button>
+                            <input type="text" id="file-search" placeholder="Search files...">
+                        </div>
                     </div>
                     <div class="data-table">
-                        <table id="uploaded-files-table">
+                        <table id="monthly-files-table">
                             <thead>
                                 <tr>
                                     <th>Filename</th>
@@ -58,15 +63,11 @@
                             <tbody></tbody>
                         </table>
                     </div>
-                    <div class="file-history">
-                        <h4>Recent Activity</h4>
-                        <div id="file-history-list"></div>
-                    </div>
                 </div>
 
-                <!-- Add recently edited files section to dashboard -->
+                <!-- Recent Files Section -->
                 <div class="recent-files">
-                    <h3>Recently Edited Files</h3>
+                    <h3>Recently Modified Files</h3>
                     <div id="recent-files-list"></div>
                 </div>
             </div>

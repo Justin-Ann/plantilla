@@ -32,3 +32,19 @@ class Config:
         'On-hold',
         'Not yet for filling'
     ]
+
+    # Add API endpoints configuration
+    API_ENDPOINTS = {
+        'raw_data': '/api/raw-data',
+        'clean_data': '/api/clean-data',
+        'files': '/api/files',
+        'applicants': '/api/applicants',
+        'dashboard': '/api/dashboard'
+    }
+
+    # Add file processing configuration
+    FILE_PROCESSING = {
+        'chunk_size': 1000,
+        'max_rows': 50000,
+        'timeout': 300  # 5 minutes
+    }

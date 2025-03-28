@@ -307,6 +307,30 @@ $(document).ready(function() {
     
     // Remove the load files button click handler since it's not needed anymore
     $('#load-files-btn').remove();
+    
+    // Load initial dashboard data
+    loadDashboardCounts();
+    loadMonthlyFiles();
+    loadRecentFiles();
+    
+    // Setup month picker handler
+    $('#month-picker').on('change', function() {
+        loadMonthlyFiles($(this).val());
+    });
+    
+    // Setup file search
+    $('#file-search').on('keyup', function() {
+        const searchTerm = $(this).val().toLowerCase();
+        if (searchTerm.length > 2 || searchTerm === '') {
+            searchFiles(searchTerm);
+        }
+    });
+    
+    // Refresh dashboard data periodically
+    setInterval(() => {
+        loadDashboardCounts();
+        loadRecentFiles();
+    }, 30000); // Refresh every 30 seconds
 });
 
 // Update all other API calls to use the new API_URL
@@ -1150,4 +1174,178 @@ function searchFiles(term) {
     });
 }
 
-// ...rest of existing code...
+// Load monthly files
+function loadMonthlyFiles(monthYear = null) {
+    if (!monthYear) {
+        const now = new Date();
+        monthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        $('#month-picker').val(monthYear);
+    }
+
+    $.ajax({
+        url: `${API_URL}/uploaded-files?month_year=${monthYear}`,
+        type: 'GET',
+        success: function(response) {
+            if (response.success) {
+                updateMonthlyFilesList(response.files);
+            }
+        }
+    });
+}
+
+function updateMonthlyFilesList(files) {
+    const tableBody = $('#monthly-files-table tbody');
+    tableBody.empty();
+    
+    files.forEach(file => {
+        const uploadDate = formatPhTime(file.upload_date);
+        const lastModified = file.last_modified ? formatPhTime(file.last_modified) : 'Never';
+        
+        tableBody.append(`
+            <tr>
+                <td>${file.original_filename}</td>
+                <td>${uploadDate}</td>
+                <td>${lastModified}</td>
+                <td>
+                    <button class="action-btn view-btn" onclick="openFile(${file.id})">Open</button>
+                    <button class="action-btn delete-btn" onclick="deleteFile(${file.id})">Delete</button>
+                </td>
+            </tr>
+        `);
+    });
+}
+
+// Load and display recent files
+function loadRecentFiles() {
+    $.ajax({
+        url: `${API_URL}/dashboard/recent-files`,
+        method: 'GET',
+        success: function(response) {
+            if (response.success) {
+                const recentList = $('#recent-files-list');
+                recentList.empty();
+                
+                response.files.forEach(file => {
+                    recentList.append(`
+                        <div class="recent-file" onclick="openFile(${file.id})">
+                            <div class="file-name">${file.original_filename}</div>
+                            <div class="modified-date">Modified: ${formatPhTime(file.last_modified)}</div>
+                        </div>
+                    `);
+                });
+            }
+        }
+    });
+}
+
+function openFile(fileId) {
+    // Navigate to data management page
+    $('.nav-menu a[data-page="data-management"]').click();
+    
+    // Switch to raw data tab
+    $('.tab[data-tab="raw-data"]').click();
+    
+    // Load file content
+    loadRawDataContent(fileId);
+}
+
+function initializeEditors(container) {
+    container.find('[data-type]').each(function() {
+        const cell = $(this);
+        const type = cell.data('type');
+        
+        cell.on('click', function() {
+            const currentValue = cell.text().trim();
+            
+            switch(type) {
+                case 'sex':
+                    showDropdownEditor(cell, ['Male', 'Female', 'Others']);
+                    break;
+                case 'status':
+                    showDropdownEditor(cell, ['Temporary', 'Permanent']);
+                    break;
+                case 'sg':
+                    showNumberEditor(cell, 1, 100);
+                    break;
+                case 'step':
+                    showNumberEditor(cell, 1, 10);
+                    break;
+                case 'level':
+                    showNumberEditor(cell, 1, 10);
+                    break;
+                case 'date':
+                    showDateEditor(cell);
+                    break;
+                case 'currency':
+                    showCurrencyEditor(cell);
+                    break;
+                case 'vacated_due_to':
+                    showDropdownEditor(cell, [
+                        'PROMOTION',
+                        'COMPULSORY RETIREMENT',
+                        'RESIGNATION',
+                        'SWAPPING OF ITEM',
+                        'TRANSFER'
+                    ]);
+                    break;
+            }
+        });
+    });
+}
+
+function showDropdownEditor(cell, options) {
+    const currentValue = cell.text().trim();
+    const select = $('<select>').addClass('cell-editor');
+    options.forEach(opt => {
+        select.append($('<option>').val(opt).text(opt));
+    });
+    select.val(currentValue);
+    
+    select.on('change blur', function() {
+        const newValue = $(this).val();
+        cell.text(newValue);
+        $(this).remove();
+    });
+    
+    cell.html(select);
+    select.focus();
+}
+
+function showDateEditor(cell) {
+    const currentValue = cell.text().trim();
+    const input = $('<input>')
+        .attr('type', 'date')
+        .addClass('cell-editor')
+        .val(currentValue);
+    
+    input.on('change blur', function() {
+        const newValue = $(this).val();
+        cell.text(newValue);
+        $(this).remove();
+    });
+    
+    cell.html(input);
+    input.focus();
+}
+
+function showCurrencyEditor(cell) {
+    const currentValue = cell.text().trim().replace(/[^0-9.]/g, '');
+    const input = $('<input>')
+        .attr('type', 'number')
+        .attr('step', '0.01')
+        .addClass('cell-editor')
+        .val(currentValue);
+    
+    input.on('change blur', function() {
+        const newValue = $(this).val();
+        cell.text(formatCurrency(newValue));
+        $(this).remove();
+    });
+    
+    cell.html(input);
+    input.focus();
+}
+
+function formatCurrency(value) {
+    return '₱' + parseFloat(value).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}

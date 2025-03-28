@@ -635,6 +635,65 @@ td select:focus, td input:focus {
     background-color: rgba(0,0,0,0.05);
 }
 
+/* Monthly Files Section */
+.monthly-files {
+    background: var(--light-color);
+    padding: 20px;
+    border-radius: 4px;
+    margin: 20px 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+#file-search {
+    min-width: 200px;
+}
+
+/* Recent Files Section */
+.recent-files {
+    background: var(--light-color);
+    padding: 20px;
+    border-radius: 4px;
+    margin-top: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.recent-file {
+    padding: 10px;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+}
+
+.recent-file:hover {
+    background: rgba(0,0,0,0.02);
+}
+
+.recent-file:last-child {
+    border-bottom: none;
+}
+
+.file-name {
+    font-weight: 500;
+    color: var(--primary-color);
+}
+
+.modified-date {
+    font-size: 0.9em;
+    color: #666;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .container {
