@@ -16,16 +16,25 @@ function checkServerConnectivity() {
     });
 }
 
-// Add function to format date in Philippine time
+// Update formatPhTime function
 function formatPhTime(date) {
-    return new Date(date).toLocaleString('en-US', {
+    if (!date) return '';
+    
+    // If date is a string, convert to Date object
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    
+    // Check for invalid date
+    if (isNaN(dateObj.getTime())) return '';
+    
+    // Format the date in Philippine time
+    return dateObj.toLocaleString('en-US', {
         timeZone: 'Asia/Manila',
-        hour: 'numeric',
-        minute: 'numeric',
-        hour12: true,
         year: 'numeric',
         month: 'short',
-        day: 'numeric'
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: true
     });
 }
 
@@ -1033,11 +1042,36 @@ function displayFileHistory() {
 // Add file search functionality
 function searchFiles(term) {
     $.ajax({
-        url: `${API_URL}/files/search?term=${encodeURIComponent(term)}`,
-        method: 'GET',
+        url: `${API_URL}/files/search?term=` + term,
+        type: 'GET',
         success: function(response) {
             if (response.success) {
-                updateFileList(response.data);
+                const tableBody = $('#files-table tbody');
+                tableBody.empty();
+                
+                response.data.forEach(function(file) {
+                    const uploadDate = formatPhTime(file.upload_date);
+                    const lastModified = file.last_modified ? formatPhTime(file.last_modified) : 'Never';
+                    
+                    tableBody.append(`
+                        <tr>
+                            <td>${file.original_filename}</td>
+                            <td>${uploadDate}</td>
+                            <td>${lastModified}</td>
+                            <td>
+                                <button class="action-btn edit-btn" onclick="editFile(${file.id})">Edit</button>
+                                <div class="dropdown">
+                                    <button class="action-btn download-btn" onclick="toggleDownloadMenu(${file.id})">Download ▼</button>
+                                    <div id="download-menu-${file.id}" class="download-menu">
+                                        <a href="javascript:void(0)" onclick="downloadFile(${file.id}, 'raw')">Raw Data</a>
+                                        <a href="javascript:void(0)" onclick="downloadFile(${file.id}, 'clean')">Clean Data</a>
+                                    </div>
+                                </div>
+                                <button class="action-btn delete-btn" onclick="deleteFile(${file.id})">Delete</button>
+                            </td>
+                        </tr>
+                    `);
+                });
             }
         }
     });
@@ -1050,7 +1084,7 @@ function editFile(fileId) {
         method: 'GET',
         success: function(response) {
             if (response.success) {
-                showFileEditor(response.data, response.file_info);
+                showFileEditor(fileId, response.data, response.file_info);
             }
         }
     });
@@ -1226,10 +1260,11 @@ function loadRecentFiles() {
                 recentList.empty();
                 
                 response.files.forEach(file => {
+                    const lastModified = file.last_modified ? formatPhTime(new Date(file.last_modified)) : 'Never';
                     recentList.append(`
                         <div class="recent-file" onclick="openFile(${file.id})">
                             <div class="file-name">${file.original_filename}</div>
-                            <div class="modified-date">Modified: ${formatPhTime(file.last_modified)}</div>
+                            <div class="modified-date">Modified: ${lastModified}</div>
                         </div>
                     `);
                 });
@@ -1431,6 +1466,52 @@ $('#file-upload-form').on('submit', function(e) {
     
     const formData = new FormData();
     const file = this.querySelector('input[type="file"]').files[0];
+    const monthYear = $('#upload-month').val();
+    
+    if (!file || !monthYear) {
+        alert('Please select both a file and month');
+        return;
+    }
+    
+    formData.append('file', file);
+    formData.append('month_year', monthYear);
+    
+    const submitButton = $(this).find('button[type="submit"]');
+    submitButton.prop('disabled', true).text('Uploading...');
+    
+    $.ajax({
+        url: `${API_URL}/upload-with-month`,
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(response) {
+            if (response.success) {
+                alert('File uploaded successfully!');
+                $('#upload-modal').css('display', 'none');
+                loadMonthlyFiles($('#month-picker').val());
+                loadDashboardCounts();
+            } else {
+                alert('Upload failed: ' + response.message);
+            }
+        },
+        error: function(xhr) {
+            alert('Error uploading file. Please try again.');
+            console.error('Upload error:', xhr);
+        },
+        complete: function() {
+            submitButton.prop('disabled', false).text('Upload');
+            $('#file-upload-form')[0].reset();
+        }
+    });
+});
+
+// Update file upload form handler
+$('#file-upload-form').on('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData();
+    const file = $('#upload-file')[0].files[0];
     const monthYear = $('#upload-month').val();
     
     if (!file || !monthYear) {

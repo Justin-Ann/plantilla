@@ -1017,14 +1017,22 @@ def get_recent_files():
     
     try:
         cursor.execute("""
-            SELECT id, filename, last_modified 
+            SELECT id, original_filename, upload_date, last_modified 
             FROM uploaded_files 
             WHERE status = 'active'
-            ORDER BY last_modified DESC 
+            ORDER BY COALESCE(last_modified, upload_date) DESC 
             LIMIT 5
         """)
         
         files = cursor.fetchall()
+        
+        # Convert datetime objects to ISO format strings
+        for file in files:
+            if file['last_modified']:
+                file['last_modified'] = file['last_modified'].isoformat()
+            if file['upload_date']:
+                file['upload_date'] = file['upload_date'].isoformat()
+                
         return jsonify({'success': True, 'files': files})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
