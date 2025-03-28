@@ -738,6 +738,48 @@ td[data-type]:hover {
     cursor: pointer;
 }
 
+/* Upload Modal Styles */
+#upload-modal .modal-content {
+    max-width: 500px;
+}
+
+#upload-modal .form-group {
+    margin-bottom: 20px;
+}
+
+#upload-modal label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+#upload-modal input[type="month"],
+#upload-modal input[type="file"] {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+#upload-modal button[type="submit"] {
+    width: 100%;
+    padding: 10px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#upload-modal button[type="submit"]:hover {
+    background-color: #004494;
+}
+
+#upload-modal button[type="submit"]:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .container {

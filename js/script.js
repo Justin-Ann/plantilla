@@ -1420,4 +1420,55 @@ function showFilteredData(status) {
     $('#status-filter').val(status).trigger('change');
 }
 
+// Update upload button handler
+$('#upload-btn').on('click', function() {
+    $('#upload-modal').css('display', 'block');
+});
+
+// Handle file upload form submission
+$('#file-upload-form').on('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData();
+    const file = this.querySelector('input[type="file"]').files[0];
+    const monthYear = $('#upload-month').val();
+    
+    if (!file || !monthYear) {
+        alert('Please select both a file and month');
+        return;
+    }
+    
+    formData.append('file', file);
+    formData.append('month_year', monthYear);
+    
+    const submitButton = $(this).find('button[type="submit"]');
+    submitButton.prop('disabled', true).text('Uploading...');
+    
+    $.ajax({
+        url: `${API_URL}/upload-with-month`,
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(response) {
+            if (response.success) {
+                alert('File uploaded successfully!');
+                $('#upload-modal').css('display', 'none');
+                loadMonthlyFiles($('#month-picker').val());
+                loadDashboardCounts();
+            } else {
+                alert('Upload failed: ' + response.message);
+            }
+        },
+        error: function(xhr) {
+            alert('Error uploading file. Please try again.');
+            console.error('Upload error:', xhr);
+        },
+        complete: function() {
+            submitButton.prop('disabled', false).text('Upload');
+            $('#file-upload-form')[0].reset();
+        }
+    });
+});
+
 // ...rest of existing code...

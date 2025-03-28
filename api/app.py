@@ -18,6 +18,8 @@ from config import Config
 
 from datetime import datetime
 from flask_cors import CORS    
+import mysql.connector
+from mysql.connector import Error
 
 app = Flask(__name__, static_folder='../static', template_folder='../templates')
 app.config.from_object(Config)
