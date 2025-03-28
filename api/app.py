@@ -4,16 +4,20 @@ from io import BytesIO
 import os
 import pandas as pd
 from werkzeug.utils import secure_filename
-# Modified import to avoid circular import issues
 import sys
+
+# Add project root to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from data_processor import process_raw_data
-import mysql.connector
-from mysql.connector import Error
+
+# Update imports with correct paths
+from api.data_processor import process_raw_data
+from api.file_handler import FileHandler
+from api.error_handler import APIError, handle_error
+from api.db_manager import DatabaseManager
+from config import Config
+
 from datetime import datetime
 from flask_cors import CORS    
-from config import Config
-from api.file_handler import FileHandler
 
 app = Flask(__name__, static_folder='../static', template_folder='../templates')
 app.config.from_object(Config)

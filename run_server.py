@@ -1,4 +1,9 @@
 import os
+import sys
+
+# Add project root to Python path
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 from api.app import app
 
 def setup_directories():
