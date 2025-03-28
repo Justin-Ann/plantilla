@@ -11,10 +11,12 @@ import mysql.connector
 from mysql.connector import Error
 from datetime import datetime
 from flask_cors import CORS    
+from config import Config
+from api.file_handler import FileHandler
 
 app = Flask(__name__, static_folder='../static', template_folder='../templates')
-app.config['UPLOAD_FOLDER'] = '../uploads'
-app.config['ALLOWED_EXTENSIONS'] = {'xlsx', 'xls', 'csv'}
+app.config.from_object(Config)
+file_handler = FileHandler(app.config['UPLOAD_FOLDER'])
 CORS(app)
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
@@ -460,56 +462,59 @@ def upload_file_with_month():
     if file.filename == '':
         return jsonify({'success': False, 'message': 'No selected file'})
     
-    if file and allowed_file(file.filename):
-        try:
-            # Generate unique filename
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            original_filename = secure_filename(file.filename)
-            filename = f"{timestamp}_{original_filename}"
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            
-            # Save file
-            file.save(file_path)
-            
-            # Save file metadata to database
-            connection = connect_to_database()
-            cursor = connection.cursor()
-            
-            insert_query = """
+    try:
+        # Save and process file using FileHandler
+        file_info = file_handler.save_file(file)
+        
+        # Save file metadata and process
+        connection = connect_to_database()
+        cursor = connection.cursor()
+        
+        cursor.execute("""
             INSERT INTO uploaded_files 
-            (filename, original_filename, file_path, month_year, status, user_id)
+            (filename, original_filename, file_path, month_year, status, processing_status)
             VALUES (%s, %s, %s, %s, %s, %s)
-            """
-            
-            cursor.execute(insert_query, (
-                filename,
-                original_filename,
-                file_path,
-                month_year,
-                'active',
-                1  # Default user_id
-            ))
-            
+        """, (
+            file_info['filename'],
+            file_info['original_filename'],
+            file_info['file_path'],
+            month_year,
+            'active',
+            'processing'
+        ))
+        
+        file_id = cursor.lastrowid
+        connection.commit()
+        
+        # Process the file
+        success, message = process_raw_data(file_info['file_path'], file_id)
+        
+        if success:
+            cursor.execute("""
+                UPDATE uploaded_files 
+                SET processing_status = 'completed'
+                WHERE id = %s
+            """, (file_id,))
             connection.commit()
+            return jsonify({'success': True, 'message': message})
+        else:
+            cursor.execute("""
+                UPDATE uploaded_files 
+                SET processing_status = 'failed',
+                    error_message = %s
+                WHERE id = %s
+            """, (message, file_id))
+            connection.commit()
+            return jsonify({'success': False, 'message': message})
             
-            # Process the file
-            success, message = process_raw_data(file_path)
-            
-            if success:
-                return jsonify({'success': True, 'message': 'File uploaded and processed successfully'})
-            else:
-                return jsonify({'success': False, 'message': message})
-                
-        except Exception as e:
-            if connection:
-                connection.rollback()
-            return jsonify({'success': False, 'message': str(e)})
-        finally:
-            if connection:
-                cursor.close()
-                connection.close()
-    
-    return jsonify({'success': False, 'message': 'Invalid file type'})
+    except Exception as e:
+        if connection:
+            connection.rollback()
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        if connection:
+            cursor.close()
+            connection.close()
 
 @app.route('/api/files/<int:file_id>', methods=['DELETE'])
 def delete_file(file_id):
@@ -941,7 +946,88 @@ def export_clean_data_excel():
         if connection:
             connection.close()
 
-# Route removed since it's a duplicate of the previous implementation
+@app.route('/api/dashboard/status-counts', methods=['GET'])
+def get_status_counts():
+    try:
+        connection = connect_to_database()
+        cursor = connection.cursor(dictionary=True)
+        
+        # Get counts across all files
+        cursor.execute("""
+            SELECT 
+                status,
+                COUNT(*) as count
+            FROM clean_data
+            GROUP BY status
+        """)
+        
+        counts = {
+            'On-process': 0,
+            'On-hold': 0,
+            'Not yet for filling': 0
+        }
+        
+        for row in cursor.fetchall():
+            if row['status'] in counts:
+                counts[row['status']] = row['count']
+                
+        return jsonify({'success': True, 'counts': counts})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        if connection:
+            cursor.close()
+            connection.close()
+
+@app.route('/api/files/search', methods=['GET'])
+def search_files():
+    search_term = request.args.get('term', '')
+    
+    try:
+        connection = connect_to_database()
+        cursor = connection.cursor(dictionary=True)
+        
+        cursor.execute("""
+            SELECT * FROM uploaded_files 
+            WHERE original_filename LIKE %s 
+            AND status = 'active'
+            ORDER BY upload_date DESC
+        """, (f'%{search_term}%',))
+        
+        files = cursor.fetchall()
+        return jsonify({'success': True, 'files': files})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        if connection:
+            cursor.close()
+            connection.close()
+
+@app.route('/api/applicants/search', methods=['GET'])
+def search_applicants():
+    search_term = request.args.get('term', '')
+    
+    try:
+        connection = connect_to_database()
+        cursor = connection.cursor(dictionary=True)
+        
+        cursor.execute("""
+            SELECT * FROM raw_data 
+            WHERE MATCH(fullname) AGAINST(%s IN BOOLEAN MODE)
+            AND is_latest = TRUE
+        """, (search_term,))
+        
+        results = cursor.fetchall()
+        return jsonify({'success': True, 'data': results})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        if connection:
+            cursor.close()
+            connection.close()
 
 @app.route('/api/health-check', methods=['GET'])
 def health_check():

@@ -119,3 +119,58 @@ ADD COLUMN last_modified TIMESTAMP NULL DEFAULT NULL;
 -- Update existing records to set last_modified same as upload_date
 UPDATE uploaded_files 
 SET last_modified = COALESCE(last_modified, upload_date);
+
+// Add search indexes
+ALTER TABLE raw_data ADD FULLTEXT INDEX ft_fullname (fullname);
+ALTER TABLE raw_data ADD FULLTEXT INDEX ft_search (plantilla_no, fullname, position_title);
+
+-- Add indices for better performance
+ALTER TABLE raw_data ADD INDEX idx_file_search (file_id, is_latest);
+
+-- Add vacancy reason enum
+ALTER TABLE raw_data 
+MODIFY COLUMN vacated_due_to ENUM(
+    'PROMOTION', 
+    'COMPULSORY RETIREMENT', 
+    'RESIGNATION', 
+    'SWAPPING OF ITEM', 
+    'TRANSFER'
+) NULL;
+
+-- Add appointment status enum
+ALTER TABLE raw_data 
+MODIFY COLUMN appointment_status ENUM('TEMPORARY', 'PERMANENT') DEFAULT 'PERMANENT';
+
+-- Add constraints for numeric fields
+ALTER TABLE raw_data 
+ADD CONSTRAINT chk_sg CHECK (CAST(sg AS UNSIGNED) BETWEEN 1 AND 100),
+ADD CONSTRAINT chk_step CHECK (CAST(step AS UNSIGNED) BETWEEN 1 AND 10),
+ADD CONSTRAINT chk_level CHECK (CAST(level AS UNSIGNED) BETWEEN 1 AND 10);
+
+-- Add currency formatting
+ALTER TABLE raw_data 
+MODIFY COLUMN monthly_salary DECIMAL(12,2);
+
+-- Update clean_data status options
+ALTER TABLE clean_data 
+MODIFY COLUMN status ENUM('On-process', 'On-hold', 'Not yet for filling') 
+DEFAULT 'On-process';
+
+-- Add last_edited field to track modifications
+ALTER TABLE raw_data 
+ADD COLUMN last_edited TIMESTAMP NULL DEFAULT NULL;
+
+-- Add file_id to raw_data table if not exists
+ALTER TABLE raw_data 
+ADD COLUMN file_id INT NULL,
+ADD FOREIGN KEY (file_id) REFERENCES uploaded_files(id) ON DELETE CASCADE;
+
+-- Add status tracking to uploaded_files
+ALTER TABLE uploaded_files
+ADD COLUMN processing_status ENUM('pending', 'processing', 'completed', 'failed') DEFAULT 'pending',
+ADD COLUMN error_message TEXT NULL;
+
+-- Update indexes for better performance
+CREATE INDEX idx_file_latest ON raw_data(file_id, is_latest);
+CREATE INDEX idx_month_status ON uploaded_files(month_year, status);
+CREATE INDEX idx_raw_data_plantilla ON raw_data(plantilla_no);
