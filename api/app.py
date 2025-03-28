@@ -313,19 +313,31 @@ def get_applicants():
 def search_applicants():
     search_term = request.args.get('term', '')
     
-    connection = connect_to_database()
-    if not connection:
-        return jsonify({'success': False, 'message': 'Database connection failed'})
-    
     try:
+        connection = connect_to_database()
+        if not connection:
+            return jsonify({'success': False, 'message': 'Database connection failed'})
+            
         cursor = connection.cursor(dictionary=True)
         
-        search_query = """
-        SELECT * FROM applicants
-        WHERE fullname LIKE %s
-        """
+        # Search in both applicants and raw_data tables
+        cursor.execute("""
+            SELECT * FROM (
+                SELECT id, fullname, sex, position_title, date_of_birth, 
+                       date_last_promotion, date_last_increment, date_of_longevity,
+                       appointment_status, plantilla_no, 'applicant' as source
+                FROM applicants 
+                WHERE fullname LIKE %s
+                UNION ALL
+                SELECT id, fullname, sex, position_title, date_of_birth,
+                       date_last_promotion, date_last_increment, date_of_longevity,
+                       appointment_status, plantilla_no, 'raw_data' as source
+                FROM raw_data 
+                WHERE fullname LIKE %s AND is_latest = TRUE
+            ) combined_results
+            ORDER BY fullname
+        """, (f"%{search_term}%", f"%{search_term}%"))
         
-        cursor.execute(search_query, (f"%{search_term}%",))
         data = cursor.fetchall()
         
         # Convert datetime objects to strings
@@ -334,14 +346,14 @@ def search_applicants():
                 if isinstance(value, datetime):
                     row[key] = value.strftime('%Y-%m-%d')
         
-        cursor.close()
-        connection.close()
-        
         return jsonify({'success': True, 'data': data})
+        
     except Error as e:
-        if connection:
-            connection.close()
         return jsonify({'success': False, 'message': f'Database error: {str(e)}'})
+    finally:
+        if connection:
+            cursor.close()
+            connection.close()
 
 @app.route('/api/applicants', methods=['POST'])
 def add_applicant():
@@ -993,29 +1005,7 @@ def search_files():
             WHERE original_filename LIKE %s 
             AND status = 'active'
             ORDER BY upload_date DESC
-        """, (f'%{search_term}%',))
-        
-        files = cursor.fetchall()
-        return jsonify({'success': True, 'files': files})
-        
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)})
-    finally:
-        if connection:
-            cursor.close()
-            connection.close()
-
-@app.route('/api/applicants/search', methods=['GET'])
-def search_applicants():
-    search_term = request.args.get('term', '')
-    
-    try:
-        connection = connect_to_database()
-        cursor = connection.cursor(dictionary=True)
-        
-        cursor.execute("""
-            SELECT * FROM raw_data 
-            WHERE MATCH(fullname) AGAINST(%s IN BOOLEAN MODE)
+# Route removed to avoid duplication with the search_applicants route above
             AND is_latest = TRUE
         """, (search_term,))
         
