@@ -960,31 +960,18 @@ def export_clean_data_excel():
 
 @app.route('/api/dashboard/status-counts', methods=['GET'])
 def get_status_counts():
+    connection = connect_to_database()
+    cursor = connection.cursor(dictionary=True)
+    
     try:
-        connection = connect_to_database()
-        cursor = connection.cursor(dictionary=True)
-        
-        # Get counts across all files
         cursor.execute("""
-            SELECT 
-                status,
-                COUNT(*) as count
-            FROM clean_data
+            SELECT status, COUNT(*) as count 
+            FROM clean_data 
             GROUP BY status
         """)
         
-        counts = {
-            'On-process': 0,
-            'On-hold': 0,
-            'Not yet for filling': 0
-        }
-        
-        for row in cursor.fetchall():
-            if row['status'] in counts:
-                counts[row['status']] = row['count']
-                
+        counts = {row['status']: row['count'] for row in cursor.fetchall()}
         return jsonify({'success': True, 'counts': counts})
-        
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
     finally:
@@ -994,24 +981,20 @@ def get_status_counts():
 
 @app.route('/api/files/search', methods=['GET'])
 def search_files():
-    search_term = request.args.get('term', '')
+    term = request.args.get('term', '')
+    connection = connect_to_database()
+    cursor = connection.cursor(dictionary=True)
     
     try:
-        connection = connect_to_database()
-        cursor = connection.cursor(dictionary=True)
-        
         cursor.execute("""
             SELECT * FROM uploaded_files 
             WHERE original_filename LIKE %s 
             AND status = 'active'
             ORDER BY upload_date DESC
-# Route removed to avoid duplication with the search_applicants route above
-            AND is_latest = TRUE
-        """, (search_term,))
+        """, (f'%{term}%',))
         
-        results = cursor.fetchall()
-        return jsonify({'success': True, 'data': results})
-        
+        files = cursor.fetchall()
+        return jsonify({'success': True, 'data': files})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
     finally:

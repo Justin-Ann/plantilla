@@ -312,32 +312,15 @@ $(document).ready(function() {
 // Update all other API calls to use the new API_URL
 // Load dashboard counts
 function loadDashboardCounts() {
-    const counts = {
-        'On-process': 0,
-        'On-hold': 0,
-        'Not yet for filling': 0
-    };
-
-    // Get all records from clean_data table instead of checking individual files
     $.ajax({
-        url: `${API_URL}/clean-data`,
-        type: 'GET',
+        url: `${API_URL}/dashboard/status-counts`,
+        method: 'GET',
         success: function(response) {
-            if (response.success && response.data.length > 0) {
-                response.data.forEach(record => {
-                    if (record.status in counts) {
-                        counts[record.status]++;
-                    }
-                });
-                
-                // Update the dashboard counts
-                $('#on-process .count').text(counts['On-process']);
-                $('#on-hold .count').text(counts['On-hold']);
-                $('#not-yet-filling .count').text(counts['Not yet for filling']);
+            if (response.success) {
+                $('#on-process .count').text(response.counts['On-process'] || 0);
+                $('#on-hold .count').text(response.counts['On-hold'] || 0);
+                $('#not-yet-filling .count').text(response.counts['Not yet for filling'] || 0);
             }
-        },
-        error: function(xhr, status, error) {
-            console.error('Error loading dashboard counts:', error);
         }
     });
 }
@@ -1021,4 +1004,67 @@ function displayFileHistory() {
             </div>
         `);
     });
+}
+
+// Add file search functionality
+function searchFiles(term) {
+    $.ajax({
+        url: `${API_URL}/files/search?term=${encodeURIComponent(term)}`,
+        method: 'GET',
+        success: function(response) {
+            if (response.success) {
+                updateFileList(response.data);
+            }
+        }
+    });
+}
+
+// Handle file editing
+function editFile(fileId) {
+    $.ajax({
+        url: `${API_URL}/files/${fileId}/content`,
+        method: 'GET',
+        success: function(response) {
+            if (response.success) {
+                showFileEditor(response.data, response.file_info);
+            }
+        }
+    });
+}
+
+// Add field-specific editors
+function showFieldEditor(cell, field) {
+    const currentValue = cell.text();
+    let editor;
+    
+    switch(field) {
+        case 'sex':
+            editor = $('<select>')
+                .append('<option value="Male">Male</option>')
+                .append('<option value="Female">Female</option>')
+                .append('<option value="Others">Others</option>');
+            break;
+        case 'appointment_status':
+            editor = $('<select>')
+                .append('<option value="Temporary">Temporary</option>')
+                .append('<option value="Permanent">Permanent</option>');
+            break;
+        case 'sg':
+            editor = $('<select>').append(
+                Array.from({length: 100}, (_, i) => 
+                    `<option value="${i+1}">SG ${i+1}</option>`
+                )
+            );
+            break;
+        // Add other field types...
+    }
+    
+    if (editor) {
+        editor.val(currentValue)
+            .addClass('field-editor')
+            .on('change', function() {
+                cell.text($(this).val());
+            });
+        cell.html(editor);
+    }
 }
