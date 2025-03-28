@@ -1068,3 +1068,86 @@ function showFieldEditor(cell, field) {
         cell.html(editor);
     }
 }
+
+// Add file handling functions
+function openFile(fileId) {
+    // Navigate to data management
+    $('.nav-menu a[data-page="data-management"]').click();
+    
+    // Switch to raw data tab
+    $('.tab[data-tab="raw-data"]').click();
+    
+    // Load file content
+    loadFileContent(fileId);
+}
+
+function loadFileContent(fileId) {
+    $.ajax({
+        url: `${API_URL}/files/${fileId}/content`,
+        method: 'GET',
+        success: function(response) {
+            if (response.success) {
+                displayRawData(response.data);
+                initializeEditors();
+            }
+        }
+    });
+}
+
+function initializeEditors() {
+    // Add click handlers for editable cells
+    $('#raw-data-table td[data-type]').on('click', function() {
+        const type = $(this).data('type');
+        const currentValue = $(this).text();
+        
+        switch(type) {
+            case 'sex':
+                showDropdown($(this), ['Male', 'Female', 'Others']);
+                break;
+            case 'status':
+                showDropdown($(this), ['Temporary', 'Permanent']);
+                break;
+            case 'sg':
+                showNumberInput($(this), 1, 100);
+                break;
+            case 'step':
+                showNumberInput($(this), 1, 10);
+                break;
+            case 'level':
+                showNumberInput($(this), 1, 10);
+                break;
+            case 'date':
+                showDatePicker($(this));
+                break;
+            case 'currency':
+                showCurrencyInput($(this));
+                break;
+        }
+    });
+}
+
+// Add export functionality
+function exportToExcel(type) {
+    const endpoint = type === 'raw' ? 'export-raw' : 'export-clean';
+    window.location.href = `${API_URL}/${endpoint}`;
+}
+
+// Add search functionality
+$('#file-search').on('keyup', function() {
+    const searchTerm = $(this).val().toLowerCase();
+    searchFiles(searchTerm);
+});
+
+function searchFiles(term) {
+    $.ajax({
+        url: `${API_URL}/files/search?term=${encodeURIComponent(term)}`,
+        method: 'GET',
+        success: function(response) {
+            if (response.success) {
+                updateFilesList(response.data);
+            }
+        }
+    });
+}
+
+// ...rest of existing code...

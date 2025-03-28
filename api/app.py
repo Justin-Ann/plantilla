@@ -1,5 +1,6 @@
 # app.py
 from flask import Flask, request, jsonify, send_file, redirect, render_template
+from io import BytesIO
 import os
 import pandas as pd
 from werkzeug.utils import secure_filename
@@ -1012,6 +1013,64 @@ def health_check():
         return jsonify({'success': False, 'message': 'Database connection failed'}), 500
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/dashboard/recent-files', methods=['GET'])
+def get_recent_files():
+    connection = connect_to_database()
+    cursor = connection.cursor(dictionary=True)
+    
+    try:
+        cursor.execute("""
+            SELECT id, filename, last_modified 
+            FROM uploaded_files 
+            WHERE status = 'active'
+            ORDER BY last_modified DESC 
+            LIMIT 5
+        """)
+        
+        files = cursor.fetchall()
+        return jsonify({'success': True, 'files': files})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        if connection:
+            cursor.close()
+            connection.close()
+
+@app.route('/api/export/<type>', methods=['GET'])
+def export_data(type):
+    if type not in ['raw', 'clean']:
+        return jsonify({'success': False, 'message': 'Invalid export type'})
+        
+    connection = connect_to_database()
+    cursor = connection.cursor(dictionary=True)
+    
+    try:
+        if type == 'raw':
+            query = "SELECT * FROM raw_data WHERE is_latest = TRUE"
+        else:
+            query = "SELECT * FROM clean_data"
+            
+        cursor.execute(query)
+        data = cursor.fetchall()
+        
+        df = pd.DataFrame(data)
+        output = BytesIO()
+        df.to_excel(output, index=False)
+        output.seek(0)
+        
+        return send_file(
+            output,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=f'{type}_data_export.xlsx'
+        )
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        if connection:
+            cursor.close()
+            connection.close()
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
