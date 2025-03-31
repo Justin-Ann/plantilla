@@ -1,13 +1,161 @@
-<?php
-header("Location: login.php");
-exit;
-?>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Redirecting...</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plantilla Management System</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/handsontable.full.min.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 </head>
 <body>
-    If you are not redirected, <a href="login.php">click here</a>.
+    <!-- Login Screen -->
+    <div id="login-screen">
+        <div class="cloud"></div>
+        <div class="cloud-1"></div>
+        <div class="cloud-2"></div>
+        <div class="cloud-3"></div>
+        <div class="cloud-4"></div>
+        <div class="login-container">
+            <img src="img/dost-pagasa-logo.png" alt="DOST-PAGASA Logo">
+            <h2>Welcome Back</h2>
+            <form id="login-form">
+                <div class="input-group">
+                    <input type="email" placeholder="Email Address" required>
+                </div>
+                <div class="input-group">
+                    <input type="password" placeholder="Password" required>
+                </div>
+                <button type="submit">Log in</button>
+                <p>Don't have an account? <a href="#" onclick="showRegister()">Create Account</a></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div class="container" id="main-content" style="display: none;">
+        <div class="sidebar">
+            <div class="logo">
+                <img src="img/dost-pagasa-logo.png" alt="DOST-PAGASA Logo">
+            </div>
+            <ul class="nav-menu">
+                <li><a href="#" class="active" data-page="dashboard">DASHBOARD</a></li>
+                <li><a href="#" data-page="data-management">DATA MANAGEMENT</a></li>
+                <li><a href="#" data-page="applicants">APPLICANTS RECORDS</a></li>
+                <li class="logout"><a href="#" id="logout-btn">LOGOUT</a></li>
+            </ul>
+        </div>
+
+        <main class="content">
+            <!-- Dashboard Page -->
+            <div id="dashboard" class="page active">
+                <h2>Dashboard</h2>
+                <!-- Status Counts -->
+                <div class="status-counts">
+                    <div class="status-box">
+                        <h3>On-Process</h3>
+                        <span id="onProcess">0</span>
+                    </div>
+                    <div class="status-box">
+                        <h3>On-Hold</h3>
+                        <span id="onHold">0</span>
+                    </div>
+                    <div class="status-box">
+                        <h3>Not Yet for Filling</h3>
+                        <span id="notYetFilling">0</span>
+                    </div>
+                </div>
+
+                <!-- Monthly Files -->
+                <div class="section">
+                    <div class="section-header">
+                        <h3>Monthly Files</h3>
+                        <button onclick="showUploadModal()">Upload File</button>
+                    </div>
+                    <div id="monthly-files"></div>
+                </div>
+
+                <!-- Recent Files -->
+                <div class="section">
+                    <h3>Recent Files</h3>
+                    <div id="recent-files"></div>
+                </div>
+            </div>
+
+            <!-- Data Management Page -->
+            <div id="data-management" class="page">
+                <div class="tabs">
+                    <button class="tab active" data-tab="divisions">Office and Organizational Code</button>
+                    <button class="tab" data-tab="spreadsheet">Spreadsheet</button>
+                </div>
+
+                <div id="divisions-content" class="tab-content active">
+                    <div class="divisions-list"></div>
+                </div>
+
+                <div id="spreadsheet-content" class="tab-content">
+                    <div id="spreadsheet"></div>
+                </div>
+            </div>
+
+            <!-- Applicant Records Page -->
+            <div id="applicant-records" class="page">
+                <h2>Applicant Records</h2>
+                <div class="filters">
+                    <select id="month-filter">
+                        <option value="">Select Month</option>
+                    </select>
+                    <select id="division-filter">
+                        <option value="">Select Division</option>
+                    </select>
+                    <input type="text" id="search" placeholder="Search applicants...">
+                </div>
+                <div id="applicants-grid"></div>
+            </div>
+
+            <!-- Admin Panel -->
+            <div id="admin" class="page">
+                <h2>Admin Panel</h2>
+                <div class="user-management">
+                    <h3>User Management</h3>
+                    <div id="users-grid"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="upload-modal" class="modal">
+        <div class="modal-content modal-smooth">
+            <div class="modal-header">
+                <h3>Upload Monthly File</h3>
+                <span class="material-icons close-modal">close</span>
+            </div>
+            <form id="upload-form">
+                <input type="month" required>
+                <input type="file" required>
+                <button type="submit">Upload</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="logout-modal" class="modal">
+        <div class="modal-content">
+            <h3>Confirm Logout</h3>
+            <p>Are you sure you want to logout?</p>
+            <div class="modal-buttons">
+                <button onclick="confirmLogout()">Yes</button>
+                <button onclick="closeModal('logout-modal')">No</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/handsontable.full.min.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/data-management.js"></script>
+    <script src="js/applicant-records.js"></script>
+    <script src="js/admin.js"></script>
 </body>
 </html>

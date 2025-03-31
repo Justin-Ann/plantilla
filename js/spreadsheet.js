@@ -85,19 +85,42 @@ class PlantillaSpreadsheet {
         this.grid = new Handsontable(this.container, {
             data: this.data,
             rowHeaders: true,
-            colHeaders: true,
-            filters: true,
-            dropdownMenu: true,
-            contextMenu: true,
+            colHeaders: [
+                'ID No.', 'Full Name', 'Last Name', 'First Name', 'Middle Name',
+                'Ext Name', 'MI', 'Sex', 'Position Title', 'Item Number',
+                'Tech Code', 'Level', 'Appointment Status', 'SG', 'Step',
+                'Monthly Salary', 'Date of Birth', 'Date Orig. Appt.',
+                'Date Govt Srvc', 'Date Last Promotion', 'Date Last Increment',
+                'Date of Longevity', 'Division'
+            ],
             columns: [
-                { data: 'division', type: 'dropdown', source: this.getDivisionList() },
-                { data: 'sex', type: 'dropdown', source: this.dropdowns.sex },
-                { data: 'status', type: 'dropdown', source: this.dropdowns.status },
+                { data: 'id_no' },
+                { data: 'full_name' },
+                { data: 'last_name' },
+                { data: 'first_name' },
+                { data: 'middle_name' },
+                { data: 'ext_name' },
+                { data: 'mi' },
+                { data: 'sex', type: 'dropdown', source: ['Male', 'Female', 'Others'] },
+                { data: 'position_title' },
+                { data: 'item_number' },
+                { data: 'tech_code' },
+                { data: 'level' },
+                { data: 'appointment_status', type: 'dropdown', source: ['Temporary', 'Permanent'] },
                 { data: 'sg', type: 'numeric', min: 1, max: 100 },
                 { data: 'step', type: 'numeric', min: 1, max: 10 },
                 { data: 'monthly_salary', type: 'numeric', numericFormat: { pattern: '₱0,0.00' } },
-                // Add other columns...
+                { data: 'date_of_birth', type: 'date' },
+                { data: 'date_orig_appt', type: 'date' },
+                { data: 'date_govt_srvc', type: 'date' },
+                { data: 'date_last_promotion', type: 'date' },
+                { data: 'date_last_increment', type: 'date' },
+                { data: 'date_of_longevity', type: 'date' },
+                { data: 'division', type: 'dropdown', source: this.getDivisionList() }
             ],
+            filters: true,
+            dropdownMenu: true,
+            contextMenu: true,
             afterChange: (changes) => this.handleDataChange(changes)
         });
     }
@@ -122,6 +145,30 @@ class PlantillaSpreadsheet {
             this.grid.loadData(records);
         } catch (error) {
             console.error('Error filtering division:', error);
+        }
+    }
+
+    async handleDataChange(changes) {
+        if (!changes) return;
+        
+        const updatedData = changes.map(([row, prop, oldValue, newValue]) => ({
+            row,
+            prop,
+            oldValue,
+            newValue,
+            record_id: this.data[row].id
+        }));
+
+        try {
+            await fetch('/api/update-records.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updatedData)
+            });
+        } catch (error) {
+            console.error('Error updating records:', error);
         }
     }
 }
