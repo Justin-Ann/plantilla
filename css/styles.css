@@ -973,6 +973,46 @@ td[data-type]:hover {
     min-width: 200px;
 }
 
+/* Verification Styles */
+.message {
+    padding: 15px;
+    margin: 20px 0;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.message a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.message a:hover {
+    text-decoration: underline;
+}
+
+/* Form invalid feedback */
+.is-invalid {
+    border-color: var(--danger-color) !important;
+}
+
+.invalid-feedback {
+    color: var(--danger-color);
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+/* Form success feedback */
+.is-valid {
+    border-color: var(--success-color) !important;
+}
+
+.valid-feedback {
+    color: var(--success-color);
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .container {

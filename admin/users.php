@@ -75,31 +75,18 @@ $result = mysqli_query($conn, $sql);
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>User Management</title>
+    <title>User Management - Plantilla Management System</title>
     <link rel="stylesheet" href="../css/styles.css">
 </head>
 <body>
     <div class="container">
-        <?php include 'admin_sidebar.php'; ?>
-        
+        <?php include '../sidebar.php'; ?>
         <div class="main-content">
             <h2>User Management</h2>
-            
-            <div class="user-filters">
-                <input type="text" id="search-users" placeholder="Search users...">
-                <select id="role-filter">
-                    <option value="">All Roles</option>
-                    <option value="editor">Editor</option>
-                    <option value="viewer">Viewer</option>
-                </select>
-                <select id="status-filter">
-                    <option value="">All Status</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                </select>
+            <div class="user-controls">
+                <button onclick="addUser()" class="btn btn-primary">Add User</button>
             </div>
-
-            <table class="users-table">
+            <table class="data-table">
                 <thead>
                     <tr>
                         <th>Username</th>

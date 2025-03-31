@@ -7,6 +7,17 @@
         <li><a href="#" class="active" data-page="dashboard">DASHBOARD</a></li>
         <li><a href="#" data-page="data-management">DATA MANAGEMENT</a></li>
         <li><a href="#" data-page="applicants">APPLICANTS RECORDS</a></li>
-        <li class="logout"><a href="logout.php">LOGOUT</a></li>
+        <?php if(isAdmin()): ?>
+        <li><a href="/admin/users.php">USER MANAGEMENT</a></li>
+        <?php endif; ?>
+        <li class="logout"><a href="#" onclick="confirmLogout()">LOGOUT</a></li>
     </ul>
 </div>
+
+<script>
+function confirmLogout() {
+    if(confirm('Are you sure you want to logout?')) {
+        window.location.href = 'logout.php';
+    }
+}
+</script>

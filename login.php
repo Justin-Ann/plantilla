@@ -1,7 +1,17 @@
 <?php
-// login.php
+// Start session
 session_start();
+
+// Check if user is already logged in
+if(isset($_SESSION["loggedin"]) && $_SESSION["loggedin"] === true){
+    header("location: dashboard.php");
+    exit;
+}
+
 require_once "config.php";
+require_once "auth/login-handler.php";
+
+$loginHandler = new LoginHandler($conn);
 
 $username = $password = "";
 $username_err = $password_err = $login_err = "";
@@ -20,52 +30,58 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
     }
     
     if(empty($username_err) && empty($password_err)){
-        $sql = "SELECT id, username, password, role, email_verified FROM users WHERE username = ?";
-        
-        if($stmt = mysqli_prepare($conn, $sql)){
-            mysqli_stmt_bind_param($stmt, "s", $param_username);
-            $param_username = $username;
+        $lockout = $loginHandler->checkLoginAttempts($username);
+        if($lockout['locked']) {
+            $login_err = "Account is temporarily locked. Try again in " . ceil($lockout['time_left']/60) . " minutes.";
+        } else {
+            $sql = "SELECT id, username, password, role, email_verified FROM users WHERE username = ?";
             
-            if(mysqli_stmt_execute($stmt)){
-                mysqli_stmt_store_result($stmt);
+            if($stmt = mysqli_prepare($conn, $sql)){
+                mysqli_stmt_bind_param($stmt, "s", $param_username);
+                $param_username = $username;
                 
-                if(mysqli_stmt_num_rows($stmt) == 1){
-                    mysqli_stmt_bind_result($stmt, $id, $username, $hashed_password, $role, $email_verified);
-                    if(mysqli_stmt_fetch($stmt)){
-                        if(!$email_verified){
-                            $login_err = "Please verify your email before logging in.";
-                        }
-                        else if(password_verify($password, $hashed_password)){
-                            // Start session and set variables
-                            session_start();
-                            $_SESSION["loggedin"] = true;
-                            $_SESSION["id"] = $id;
-                            $_SESSION["username"] = $username;
-                            $_SESSION["role"] = $role;
-                            
-                            // Update last login time
-                            $update_sql = "UPDATE users SET last_login = NOW() WHERE id = ?";
-                            if($update_stmt = mysqli_prepare($conn, $update_sql)){
-                                mysqli_stmt_bind_param($update_stmt, "i", $id);
-                                mysqli_stmt_execute($update_stmt);
+                if(mysqli_stmt_execute($stmt)){
+                    mysqli_stmt_store_result($stmt);
+                    
+                    if(mysqli_stmt_num_rows($stmt) == 1){
+                        mysqli_stmt_bind_result($stmt, $id, $username, $hashed_password, $role, $email_verified);
+                        if(mysqli_stmt_fetch($stmt)){
+                            if(password_verify($password, $hashed_password)){
+                                if(!$email_verified){
+                                    $loginHandler->recordLoginAttempt($username, 0);
+                                    $login_err = "Please verify your email before logging in.";
+                                } else {
+                                    $loginHandler->recordLoginAttempt($username, 1);
+                                    session_start();
+                                    $_SESSION["loggedin"] = true;
+                                    $_SESSION["id"] = $id;
+                                    $_SESSION["username"] = $username;
+                                    $_SESSION["role"] = $role;
+                                    
+                                    // Update last login time
+                                    $update_sql = "UPDATE users SET last_login = NOW() WHERE id = ?";
+                                    if($update_stmt = mysqli_prepare($conn, $update_sql)){
+                                        mysqli_stmt_bind_param($update_stmt, "i", $id);
+                                        mysqli_stmt_execute($update_stmt);
+                                    }
+                                    
+                                    header("location: dashboard.php");
+                                }
+                            } else {
+                                $loginHandler->recordLoginAttempt($username, 0);
+                                $login_err = "Invalid username or password.";
                             }
-                            
-                            header("location: dashboard.php");
-                        } else{
-                            $login_err = "Invalid username or password.";
                         }
+                    } else {
+                        $login_err = "Invalid username or password.";
                     }
-                } else{
-                    $login_err = "Invalid username or password.";
+                } else {
+                    echo "Oops! Something went wrong. Please try again later.";
                 }
-            } else{
-                echo "Oops! Something went wrong. Please try again later.";
+                mysqli_stmt_close($stmt);
             }
-
-            mysqli_stmt_close($stmt);
         }
     }
-    
     mysqli_close($conn);
 }
 ?>

@@ -42,3 +42,27 @@ class SpreadsheetManager {
 
     // Add editor methods
 }
+
+class SpreadsheetEditor {
+    constructor(containerId) {
+        this.container = document.getElementById(containerId);
+        this.initializeGrid();
+        this.setupEventListeners();
+    }
+
+    initializeGrid() {
+        // Create Excel-like interface
+    }
+
+    setupDropdowns() {
+        // Setup column-specific dropdowns
+        const dropdowns = {
+            'sex': ['Male', 'Female', 'Others'],
+            'appointment_status': ['Temporary', 'Permanent'],
+            'sg': Array.from({length: 100}, (_, i) => i + 1),
+            'step': Array.from({length: 10}, (_, i) => i + 1),
+            'vacated_due_to': ['Promotion', 'Retirement', 'Resignation', 'Transfer']
+        };
+        // ... implementation
+    }
+}
