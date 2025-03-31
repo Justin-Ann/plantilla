@@ -1157,7 +1157,7 @@ def get_division_counts():
         return jsonify({'success': False, 'message': str(e)})
 
 @app.route('/api/divisions/<int:division_code>/data', methods=['GET'])
-def get_division_data():
+def get_division_data(division_code):
     month_year = request.args.get('month_year')
     try:
         handler = DivisionDBHandler()
@@ -1167,11 +1167,65 @@ def get_division_data():
         return jsonify({'success': False, 'message': str(e)})
 
 @app.route('/api/divisions/<int:division_code>/status', methods=['GET'])
-def get_division_status():
+def get_division_status(division_code):
     try:
         handler = DivisionDBHandler()
         counts = handler.get_division_status_counts(division_code)
         return jsonify({'success': True, 'counts': counts})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/api/applicants/filter', methods=['GET'])
+def filter_applicants():
+    month = request.args.get('month')
+    division = request.args.get('division')
+    
+    query = """
+        SELECT * FROM applicants 
+        WHERE 1=1
+    """
+    params = []
+    
+    if month:
+        query += " AND MONTH(date_orig_appt) = %s"
+        params.append(month)
+    
+    if division:
+        query += " AND division_id = %s"
+        params.append(division)
+        
+    try:
+        connection = connect_to_database()
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(query, params)
+        data = cursor.fetchall()
+        return jsonify({'success': True, 'data': data})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/api/divisions/<int:division_code>/export', methods=['GET'])
+def export_division_data(division_code):
+    month_year = request.args.get('month_year')
+    try:
+        handler = DivisionDBHandler()
+        data = handler.get_division_data(division_code, month_year)
+        
+        # Create Excel file
+        df = pd.DataFrame(data)
+        output = BytesIO()
+        df.to_excel(output, index=False, engine='openpyxl')
+        output.seek(0)
+        
+        # Get division name
+        division_name = handler.get_division_name(division_code)
+        filename = f"{division_name}_{month_year or 'all'}_export.xlsx"
+        
+        return send_file(
+            output,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=filename
+        )
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
 

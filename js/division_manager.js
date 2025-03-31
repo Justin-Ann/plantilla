@@ -83,9 +83,24 @@ class DivisionManager {
         // Initialize editors for editable cells
         initializeEditors($('#spreadsheet-table'));
     }
+
+    exportDivisionData() {
+        const monthYear = $('#division-month-filter').val();
+        const url = `${API_URL}/divisions/${this.currentDivision}/export${monthYear ? `?month_year=${monthYear}` : ''}`;
+        
+        window.location.href = url;
+    }
 }
 
 // Initialize division manager when document is ready
 $(document).ready(() => {
     window.divisionManager = new DivisionManager();
+
+    // Add export button to toolbar
+    const exportBtn = $('<button>')
+        .addClass('action-btn')
+        .text('Export Division Data')
+        .on('click', () => window.divisionManager.exportDivisionData());
+    
+    $('.spreadsheet-toolbar').append(exportBtn);
 });

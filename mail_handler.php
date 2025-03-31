@@ -1,8 +1,8 @@
 <?php
+require 'vendor/autoload.php';
+
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
-
-require 'vendor/autoload.php';
 
 function send_verification_email($to_email, $verification_url) {
     $mail = new PHPMailer(true);
@@ -33,7 +33,7 @@ function send_verification_email($to_email, $verification_url) {
 
         $mail->send();
         return true;
-    } catch (Exception $e) {
+    } catch (PHPMailer\PHPMailer\Exception $e) {
         error_log("Email sending failed: {$mail->ErrorInfo}");
         return false;
     }

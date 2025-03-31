@@ -1552,4 +1552,50 @@ $('#file-upload-form').on('submit', function(e) {
     });
 });
 
+// Add dropdown options for editable fields
+const FIELD_OPTIONS = {
+    sex: ['Male', 'Female', 'Others'],
+    appointment_status: ['Temporary', 'Permanent'],
+    vacated_due_to: ['PROMOTION', 'COMPULSORY RETIREMENT', 'RESIGNATION', 'SWAPPING OF ITEM', 'TRANSFER']
+};
+
+function showFieldEditor(cell, fieldType) {
+    const currentValue = cell.text().trim();
+    let editor;
+
+    switch(fieldType) {
+        case 'sg':
+            editor = createNumberDropdown(1, 100);
+            break;
+        case 'step':
+            editor = createNumberDropdown(1, 10);
+            break;
+        case 'salary':
+            editor = createCurrencyInput(currentValue);
+            break;
+        case 'date':
+            editor = createDatePicker(currentValue);
+            break;
+        default:
+            if (FIELD_OPTIONS[fieldType]) {
+                editor = createOptionsDropdown(FIELD_OPTIONS[fieldType], currentValue);
+            }
+    }
+
+    if (editor) {
+        cell.html(editor);
+        editor.focus();
+    }
+}
+
+// Add live filtering
+function filterByDivision(divisionCode) {
+    const table = $('#spreadsheet-table');
+    table.find('tr').each(function() {
+        const row = $(this);
+        const division = row.find('td[data-type="division"]').text();
+        row.toggle(division === divisionCode || !divisionCode);
+    });
+}
+
 // ...rest of existing code...

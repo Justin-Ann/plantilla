@@ -218,4 +218,31 @@ BEGIN
 END//
 DELIMITER ;
 
+// Add audit log table
+CREATE TABLE IF NOT EXISTS audit_log (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    action VARCHAR(255) NOT NULL,
+    details TEXT,
+    ip_address VARCHAR(45),
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+// Add roles table
+CREATE TABLE IF NOT EXISTS roles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    description TEXT,
+    permissions JSON,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+// Insert default roles
+INSERT INTO roles (name, description, permissions) VALUES
+('admin', 'Full system access', '{"all": true}'),
+('editor', 'Can edit records', '{"read": true, "write": true, "delete": false}'),
+('viewer', 'Read-only access', '{"read": true, "write": false, "delete": false}')
+ON DUPLICATE KEY UPDATE name=name;
+
 SET SQL_SAFE_UPDATES = 1;
