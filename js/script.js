@@ -52,6 +52,10 @@ $(document).ready(function() {
         
         $('.page').removeClass('active');
         $('#' + page).addClass('active');
+
+        if (page === 'admin-account') {
+            loadAdminUsers();
+        }
     });
     
     // Tab navigation
@@ -1595,6 +1599,36 @@ function filterByDivision(divisionCode) {
         const row = $(this);
         const division = row.find('td[data-type="division"]').text();
         row.toggle(division === divisionCode || !divisionCode);
+    });
+}
+
+// Add this function to load admin users
+function loadAdminUsers() {
+    $.ajax({
+        url: `${API_URL}/users`,
+        method: 'GET',
+        success: function(response) {
+            if (response.success) {
+                const usersList = $('#users-list');
+                usersList.empty();
+                
+                response.data.forEach(user => {
+                    usersList.append(`
+                        <tr>
+                            <td>${user.username}</td>
+                            <td>${user.email}</td>
+                            <td>${user.role}</td>
+                            <td>${user.active ? 'Active' : 'Inactive'}</td>
+                            <td>${formatPhTime(user.last_login)}</td>
+                            <td>
+                                <button onclick="editUser(${user.id})" class="btn btn-primary">Edit</button>
+                                <button onclick="resetUserPassword(${user.id})" class="btn btn-warning">Reset Password</button>
+                            </td>
+                        </tr>
+                    `);
+                });
+            }
+        }
     });
 }
 

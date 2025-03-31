@@ -17,6 +17,7 @@
                 <li><a href="#" class="active" data-page="dashboard">DASHBOARD</a></li>
                 <li><a href="#" data-page="data-management">DATA MANAGEMENT</a></li>
                 <li><a href="#" data-page="applicants">APPLICANTS RECORDS</a></li>
+                <li><a href="#" data-page="admin-account">ADMIN ACCOUNT</a></li>
                 <li class="logout"><a href="logout.php">LOGOUT</a></li>
             </ul>
         </div>
@@ -132,6 +133,30 @@
                         </thead>
                         <tbody></tbody>
                     </table>
+                </div>
+            </div>
+
+            <div id="admin-account" class="page">
+                <h2>Admin Account Management</h2>
+                <div class="admin-section">
+                    <div class="user-management">
+                        <h3>User Information Management</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Last Login</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-list">
+                                <!-- Users will be loaded dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
