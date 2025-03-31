@@ -1,8 +1,8 @@
 <?php
 // Database configuration
 define('DB_SERVER', 'localhost');
-define('DB_USERNAME', 'tequila');
-define('DB_PASSWORD', '0225');
+define('DB_USERNAME', 'root'); // your database username
+define('DB_PASSWORD', ''); // your database password
 define('DB_NAME', 'plantilla_management');
 
 // Email configuration

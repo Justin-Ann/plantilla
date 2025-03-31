@@ -66,3 +66,65 @@ class SpreadsheetEditor {
         // ... implementation
     }
 }
+
+class PlantillaSpreadsheet {
+    constructor(containerId) {
+        this.container = document.getElementById(containerId);
+        this.data = [];
+        this.currentDivision = null;
+        this.init();
+    }
+
+    init() {
+        this.setupGrid();
+        this.setupDropdowns();
+        this.bindEvents();
+    }
+
+    setupGrid() {
+        this.grid = new Handsontable(this.container, {
+            data: this.data,
+            rowHeaders: true,
+            colHeaders: true,
+            filters: true,
+            dropdownMenu: true,
+            contextMenu: true,
+            columns: [
+                { data: 'division', type: 'dropdown', source: this.getDivisionList() },
+                { data: 'sex', type: 'dropdown', source: this.dropdowns.sex },
+                { data: 'status', type: 'dropdown', source: this.dropdowns.status },
+                { data: 'sg', type: 'numeric', min: 1, max: 100 },
+                { data: 'step', type: 'numeric', min: 1, max: 10 },
+                { data: 'monthly_salary', type: 'numeric', numericFormat: { pattern: '₱0,0.00' } },
+                // Add other columns...
+            ],
+            afterChange: (changes) => this.handleDataChange(changes)
+        });
+    }
+
+    setupDropdowns() {
+        // Setup dropdown values for various columns
+        this.dropdowns = {
+            sex: ['Male', 'Female', 'Others'],
+            status: ['Temporary', 'Permanent'],
+            vacatedDueTo: ['Promotion', 'Retirement', 'Resignation', 'Transfer']
+        };
+    }
+
+    bindEvents() {
+        // Event handlers for grid interactions
+    }
+
+    async filterByDivision(division) {
+        try {
+            const response = await fetch(`/api/division-records.php?division=${division}`);
+            const records = await response.json();
+            this.grid.loadData(records);
+        } catch (error) {
+            console.error('Error filtering division:', error);
+        }
+    }
+}
+
+// Initialize spreadsheet
+new PlantillaSpreadsheet('spreadsheet-container');
