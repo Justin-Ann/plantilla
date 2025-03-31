@@ -1145,5 +1145,35 @@ def register():
         cursor.close()
         connection.close()
 
+from .handlers.division_db import DivisionDBHandler
+
+@app.route('/api/divisions/counts', methods=['GET'])
+def get_division_counts():
+    try:
+        handler = DivisionDBHandler()
+        counts = handler.get_division_counts()
+        return jsonify({'success': True, 'counts': counts})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/api/divisions/<int:division_code>/data', methods=['GET'])
+def get_division_data():
+    month_year = request.args.get('month_year')
+    try:
+        handler = DivisionDBHandler()
+        data = handler.get_division_data(division_code, month_year)
+        return jsonify({'success': True, 'data': data})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/api/divisions/<int:division_code>/status', methods=['GET'])
+def get_division_status():
+    try:
+        handler = DivisionDBHandler()
+        counts = handler.get_division_status_counts(division_code)
+        return jsonify({'success': True, 'counts': counts})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

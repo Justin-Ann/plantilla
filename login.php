@@ -20,7 +20,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
     }
     
     if(empty($username_err) && empty($password_err)){
-        $sql = "SELECT id, username, password, role FROM users WHERE username = ?";
+        $sql = "SELECT id, username, password, role, email_verified FROM users WHERE username = ?";
         
         if($stmt = mysqli_prepare($conn, $sql)){
             mysqli_stmt_bind_param($stmt, "s", $param_username);
@@ -30,13 +30,25 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
                 mysqli_stmt_store_result($stmt);
                 
                 if(mysqli_stmt_num_rows($stmt) == 1){
-                    mysqli_stmt_bind_result($stmt, $id, $username, $hashed_password, $role);
+                    mysqli_stmt_bind_result($stmt, $id, $username, $hashed_password, $role, $email_verified);
                     if(mysqli_stmt_fetch($stmt)){
-                        if(password_verify($password, $hashed_password)){
+                        if(!$email_verified){
+                            $login_err = "Please verify your email before logging in.";
+                        }
+                        else if(password_verify($password, $hashed_password)){
+                            // Start session and set variables
+                            session_start();
                             $_SESSION["loggedin"] = true;
                             $_SESSION["id"] = $id;
                             $_SESSION["username"] = $username;
                             $_SESSION["role"] = $role;
+                            
+                            // Update last login time
+                            $update_sql = "UPDATE users SET last_login = NOW() WHERE id = ?";
+                            if($update_stmt = mysqli_prepare($conn, $update_sql)){
+                                mysqli_stmt_bind_param($update_stmt, "i", $id);
+                                mysqli_stmt_execute($update_stmt);
+                            }
                             
                             header("location: dashboard.php");
                         } else{
@@ -90,6 +102,10 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
                 <input type="submit" class="btn btn-primary" value="Login">
             </div>
         </form>
+        <div class="form-footer">
+            <p>Don't have an account? <a href="register.php">Sign up now</a></p>
+            <p><a href="forgot-password.php">Forgot Password?</a></p>
+        </div>
     </div>    
 </body>
 </html>

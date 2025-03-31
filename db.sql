@@ -15,7 +15,9 @@ CREATE TABLE IF NOT EXISTS users (
     verification_token VARCHAR(255),
     verification_expires DATETIME,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    last_login TIMESTAMP
+    last_login TIMESTAMP,
+    password_reset_token VARCHAR(255),
+    password_reset_expires DATETIME
 );
 
 -- Insert admin user
@@ -128,8 +130,9 @@ CREATE TABLE IF NOT EXISTS applicants (
     INDEX idx_plantilla (plantilla_no)
 );
 
--- Create divisions table
-CREATE TABLE IF NOT EXISTS divisions (
+-- Update divisions table with complete PAGASA structure
+DROP TABLE IF EXISTS divisions;
+CREATE TABLE divisions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     division_code INT NOT NULL UNIQUE,
     division_name VARCHAR(255) NOT NULL,
@@ -137,11 +140,52 @@ CREATE TABLE IF NOT EXISTS divisions (
     FOREIGN KEY (parent_id) REFERENCES divisions(id)
 );
 
--- Insert division data
+-- Insert all divisions
+TRUNCATE TABLE divisions;
 INSERT INTO divisions (division_code, division_name) VALUES
 (1, 'Office of the Administrator'),
-(2, 'Administrative Division');
-// ...rest of divisions...
+(2, 'Administrative Division'),
+(3, 'Human Resources Management and Development Section'),
+(4, 'Records Management Section'),
+(5, 'Procurement, Property and General Services Section'),
+(6, 'Financial, Planning and Management Division'),
+(7, 'Accounting Section'),
+(8, 'Budget and Planning Section'),
+(9, 'Management Services Section'),
+(10, 'Engineering and Technical Services Division'),
+(11, 'Meteorological Equipment and Telecommunications Technology Services Section'),
+(12, 'Meteorological Guides and Standards Section'),
+(13, 'Mechanical, Electrical and Infrastructure Engineering Section'),
+(14, 'Weather Division'),
+(15, 'Weather Forecasting Section'),
+(16, 'Meteorological Data and Information Exchange Section'),
+(17, 'Techniques Application and Meteorological Satellite Section'),
+(18, 'Aeronautical Meteorological Satellite Section'),
+(19, 'Marine Meteorological Services Section'),
+(20, 'Hydro-Meteorological Division'),
+(21, 'Hydrometeorological Data Applications Sections'),
+(22, 'Flood Forecasting and Warning Section'),
+(23, 'Hydrometeorological Telemetry Section'),
+(24, 'Climatology and Agrometeorology Division'),
+(25, 'Climate Monitoring and Prediction Section'),
+(26, 'Farm Weather Services Section'),
+(27, 'Impact Assessment and Applications Section'),
+(28, 'Climate and Agrometeorology Data Section'),
+(29, 'Research and Development and Training Division'),
+(30, 'Astronomy and Space Sciences Section'),
+(31, 'Climate and Agrometeorology Research and Development Section'),
+(32, 'Hydrometeorology, Tropical Meteorology and Instrument Research and Development'),
+(33, 'Numerical Modeling Section'),
+(34, 'Training and Public Information Section'),
+(35, 'Northern Luzon PAGASA Regional Services Division'),
+(36, 'Agno Flood Forecasting and Warning System'),
+(37, 'Pampanga Flood Forecasting and Warning System'),
+(38, 'Southern Luzon PAGASA Regional Services Division'),
+(39, 'Bicol Flood Forecasting and Warning System'),
+(40, 'Visayas PAGASA Regional Services Division'),
+(41, 'Northern Mindanao PAGASA Regional Services Division'),
+(42, 'Southern Mindanao PAGASA Regional Services Division'),
+(43, 'Field Stations');
 
 -- Create trigger for salary formatting
 DELIMITER //

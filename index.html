@@ -75,57 +75,33 @@
             <div id="data-management" class="page">
                 <h2>Data Management</h2>
                 <div class="tabs">
-                    <div class="tab active" data-tab="raw-data">Raw Data</div>
-                    <div class="tab" data-tab="clean-data">Clean Data</div>
+                    <div class="tab" data-tab="office-org">Office and Organizational Code</div>
+                    <div class="tab active" data-tab="spreadsheet">Spreadsheet</div>
                 </div>
-                
-                <div id="raw-data-content" class="tab-content active">
-                    <div class="data-table">
-                        <div class="table-toolbar">
-                            <input type="text" id="raw-data-search" placeholder="Search in file...">
-                            <button id="export-raw-btn" class="action-btn">Export</button>
-                        </div>
-                        <table id="raw-data-table">
-                            <thead>
-                                <tr>
-                                    <th>PLANTILLA NO.</th>
-                                    <th>PLANTILLADIVISION</th>
-                                    <th>PLANTILLASECTION/STATION</th>
-                                    <!-- Add all required columns -->
-                                    <!-- ...rest of headers... -->
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
+
+                <div id="office-org-content" class="tab-content">
+                    <div class="division-filter">
+                        <input type="month" id="division-month-filter">
+                    </div>
+                    <div class="division-list">
+                        <!-- Division items will be dynamically added here -->
+                        <div class="division-item" data-division-code="1">Office of the Administrator</div>
+                        <div class="division-item" data-division-code="2">Administrative Division</div>
+                        <!-- Add all 43 divisions -->
                     </div>
                 </div>
-                
-                <div id="clean-data-content" class="tab-content">
-                    <div class="filter-section">
-                        <select id="status-filter">
-                            <option value="">All Status</option>
-                            <option value="On-process">On-process</option>
-                            <option value="On-hold">On-hold</option>
-                            <option value="Not yet for filling">Not yet for filling</option>
+
+                <div id="spreadsheet-content" class="tab-content active">
+                    <div class="spreadsheet-toolbar">
+                        <select id="division-filter">
+                            <option value="">Select Division</option>
+                            <!-- Division options will be dynamically added -->
                         </select>
-                        <button id="export-btn">Export to Excel</button>
+                        <button id="save-changes" class="action-btn">Save Changes</button>
                     </div>
-                    
-                    <div class="data-table">
-                        <table id="clean-data-table">
-                            <thead>
-                                <tr>
-                                    <th>PLANTILLA NO.</th>
-                                    <th>PLANTILLADIVISION</th>
-                                    <th>POSITION TITLE</th>
-                                    <th>SG</th>
-                                    <th>REMARKS</th>
-                                    <th>DATE PUBLISHED</th>
-                                    <th>STATUS</th>
-                                    <th>ACTIONS</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
+                    <div class="spreadsheet-container">
+                        <table id="spreadsheet-table" class="data-table">
+                            <!-- Table content will be dynamically populated -->
                         </table>
                     </div>
                 </div>
