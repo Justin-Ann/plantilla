@@ -90,18 +90,58 @@
                         $divisions = [
                             ['code' => 1, 'name' => 'Office of the Administrator'],
                             ['code' => 2, 'name' => 'Administrative Division'],
-                            // ...add all 43 divisions here
+                            ['code' => 3, 'name' => 'Human Resources Management and Development Section'],
+                            ['code' => 4, 'name' => 'Records Management Section'],
+                            ['code' => 5, 'name' => 'Procurement, Property and General Services Section'],
+                            ['code' => 6, 'name' => 'Financial, Planning and Management Division'],
+                            ['code' => 7, 'name' => 'Accounting Section'],
+                            ['code' => 8, 'name' => 'Budget and Planning Section'],
+                            ['code' => 9, 'name' => 'Management Services Section'],
+                            ['code' => 10, 'name' => 'Engineering and Technical Services Division'],
+                            ['code' => 11, 'name' => 'Meteorological Equipment and Telecommunications Technology Services Section'],
+                            ['code' => 12, 'name' => 'Meteorological Guides and Standards Section'],
+                            ['code' => 13, 'name' => 'Mechanical, Electrical and Infrastructure Engineering Section'],
+                            ['code' => 14, 'name' => 'Weather Division'],
+                            ['code' => 15, 'name' => 'Weather Forecasting Section'],
+                            ['code' => 16, 'name' => 'Meteorological Data and Information Exchange Section'],
+                            ['code' => 17, 'name' => 'Techniques Application and Meteorological Satellite Section'],
+                            ['code' => 18, 'name' => 'Aeronautical Meteorological Satellite Section'],
+                            ['code' => 19, 'name' => 'Marine Meteorological Services Section'],
+                            ['code' => 20, 'name' => 'Hydro-Meteorological Division'],
+                            ['code' => 21, 'name' => 'Hydrometeorological Data Applications Sections'],
+                            ['code' => 22, 'name' => 'Flood Forecasting and Warning Section'],
+                            ['code' => 23, 'name' => 'Hydrometeorological Telemetry Section'],
+                            ['code' => 24, 'name' => 'Climatology and Agrometeorology Division'],
+                            ['code' => 25, 'name' => 'Climate Monitoring and Prediction Section'],
+                            ['code' => 26, 'name' => 'Farm Weather Services Section'],
+                            ['code' => 27, 'name' => 'Impact Assessment and Applications Section'],
+                            ['code' => 28, 'name' => 'Climate and Agrometeorology Data Section'],
+                            ['code' => 29, 'name' => 'Research and Development and Training Division'],
+                            ['code' => 30, 'name' => 'Astronomy and Space Sciences Section'],
+                            ['code' => 31, 'name' => 'Climate and Agrometeorology Research and Development Section'],
+                            ['code' => 32, 'name' => 'Hydrometeorology, Tropical Meteorology and Instrument Research and Development'],
+                            ['code' => 33, 'name' => 'Numerical Modeling Section'],
+                            ['code' => 34, 'name' => 'Training and Public Information Section'],
+                            ['code' => 35, 'name' => 'Northern Luzon PAGASA Regional Services Division'],
+                            ['code' => 36, 'name' => 'Agno Flood Forecasting and Warning System'],
+                            ['code' => 37, 'name' => 'Pampanga Flood Forecasting and Warning System'],
+                            ['code' => 38, 'name' => 'Southern Luzon PAGASA Regional Services Division'],
+                            ['code' => 39, 'name' => 'Bicol Flood Forecasting and Warning System'],
+                            ['code' => 40, 'name' => 'Visayas PAGASA Regional Services Division'],
+                            ['code' => 41, 'name' => 'Northern Mindanao PAGASA Regional Services Division'],
+                            ['code' => 42, 'name' => 'Southern Mindanao PAGASA Regional Services Division'],
+                            ['code' => 43, 'name' => 'Field Stations']
                         ];
                         
                         foreach($divisions as $div): ?>
-                        <div class="division-item" data-division-code="<?= $div['code'] ?>">
+                        <div class="division-item" data-division-code="<?= $div['code'] ?>" data-division-name="<?= $div['name'] ?>">
                             <div class="division-header">
                                 <span class="division-code"><?= $div['code'] ?></span>
                                 <span class="division-name"><?= $div['name'] ?></span>
                             </div>
                             <div class="division-actions">
                                 <button class="view-data-btn">View Data</button>
-                                <button class="open-files-btn">Open Files</button>
+                                <button class="open-files-btn">Files</button>
                             </div>
                         </div>
                         <?php endforeach; ?>
@@ -318,5 +358,6 @@
     </div>
     
     <script src="js/script.js"></script>
+    <script src="js/division_handler.js"></script>
 </body>
 </html>
