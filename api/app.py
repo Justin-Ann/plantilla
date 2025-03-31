@@ -1021,7 +1021,7 @@ def get_recent_files():
             FROM uploaded_files 
             WHERE status = 'active'
             ORDER BY COALESCE(last_modified, upload_date) DESC 
-            LIMIT 5
+            LIMIT 5 
         """)
         
         files = cursor.fetchall()
@@ -1109,6 +1109,41 @@ def export_data(type):
         if connection:
             cursor.close()
             connection.close()
+
+from .auth_handler import AuthHandler
+
+@app.route('/api/auth/register', methods=['POST'])
+def register():
+    data = request.json
+    connection = connect_to_database()
+    cursor = connection.cursor()
+    
+    try:
+        # Check if email exists
+        cursor.execute("SELECT id FROM users WHERE email = %s", (data['email'],))
+        if cursor.fetchone():
+            return jsonify({'success': False, 'message': 'Email already registered'})
+        
+        # Create verification token
+        token = AuthHandler.generate_token(data['email'])
+        
+        # Insert user
+        cursor.execute("""
+            INSERT INTO users (username, email, password, role, verification_token)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (data['username'], data['email'], data['password'], 'user', token))
+        
+        connection.commit()
+        
+        # Send verification email
+        AuthHandler.send_verification_email(data['email'], token)
+        
+        return jsonify({'success': True, 'message': 'Registration successful. Please verify your email.'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        cursor.close()
+        connection.close()
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

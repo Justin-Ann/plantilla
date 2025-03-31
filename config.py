@@ -48,3 +48,16 @@ class Config:
         'max_rows': 50000,
         'timeout': 300  # 5 minutes
     }
+
+    # Email configuration
+    MAIL_SERVER = 'smtp.gmail.com'
+    MAIL_PORT = 587
+    MAIL_USERNAME = 'your-email@gmail.com'
+    MAIL_PASSWORD = 'your-app-password'
+    MAIL_SENDER = 'HRIS System <your-email@gmail.com>'
+    
+    # JWT configuration
+    SECRET_KEY = 'your-secret-key'
+    
+    # Base URL
+    BASE_URL = 'http://localhost:5000'

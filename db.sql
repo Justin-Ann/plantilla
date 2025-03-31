@@ -8,8 +8,14 @@ USE plantilla_management;
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) UNIQUE,
+    email VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255),
-    role VARCHAR(20)
+    role VARCHAR(20),
+    email_verified BOOLEAN DEFAULT FALSE,
+    verification_token VARCHAR(255),
+    verification_expires DATETIME,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_login TIMESTAMP
 );
 
 -- Insert admin user
@@ -75,7 +81,9 @@ CREATE TABLE IF NOT EXISTS raw_data (
     last_edited TIMESTAMP NULL DEFAULT NULL,
     upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     is_latest BOOLEAN DEFAULT TRUE,
+    division_id INT,
     FOREIGN KEY (file_id) REFERENCES uploaded_files(id) ON DELETE CASCADE,
+    FOREIGN KEY (division_id) REFERENCES divisions(id),
     INDEX idx_is_latest (is_latest),
     INDEX idx_raw_data_plantilla (plantilla_no),
     FULLTEXT INDEX ft_fullname (fullname),
@@ -119,6 +127,21 @@ CREATE TABLE IF NOT EXISTS applicants (
     INDEX idx_fullname (fullname),
     INDEX idx_plantilla (plantilla_no)
 );
+
+-- Create divisions table
+CREATE TABLE IF NOT EXISTS divisions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    division_code INT NOT NULL UNIQUE,
+    division_name VARCHAR(255) NOT NULL,
+    parent_id INT NULL,
+    FOREIGN KEY (parent_id) REFERENCES divisions(id)
+);
+
+-- Insert division data
+INSERT INTO divisions (division_code, division_name) VALUES
+(1, 'Office of the Administrator'),
+(2, 'Administrative Division');
+// ...rest of divisions...
 
 -- Create trigger for salary formatting
 DELIMITER //
