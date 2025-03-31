@@ -9,7 +9,10 @@ CREATE TABLE users (
     role ENUM('admin', 'user') DEFAULT 'user',
     email_verified BOOLEAN DEFAULT FALSE,
     verification_token VARCHAR(255),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    verification_expires TIMESTAMP,
+    status ENUM('active', 'inactive', 'pending') DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 CREATE TABLE divisions (
