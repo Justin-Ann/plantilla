@@ -4,19 +4,22 @@ define('DB_USER', 'root');
 define('DB_PASS', '');
 define('DB_NAME', 'plantilla_db');
 
-// Create connection and make it globally accessible
-global $conn;
-$conn = mysqli_connect(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+$mysqli = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
 
-// Check connection
-if (!$conn) {
+if ($mysqli->connect_error) {
+    error_log("Connection failed: " . $mysqli->connect_error);
+    header('Content-Type: application/json');
+    http_response_code(500);
     die(json_encode([
         'success' => false,
-        'message' => 'Database connection failed: ' . mysqli_connect_error()
+        'message' => 'Database connection failed'
     ]));
 }
 
-mysqli_set_charset($conn, "utf8mb4");
+$mysqli->set_charset("utf8mb4");
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
+
+// For backward compatibility
+$conn = $mysqli;
 ?>

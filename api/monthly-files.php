@@ -6,16 +6,24 @@ $action = $_GET['action'] ?? 'list';
 
 switch($action) {
     case 'list':
-        $query = "SELECT mf.*, u.full_name as uploaded_by_name 
-                 FROM monthly_files mf 
-                 JOIN users u ON mf.uploaded_by = u.id 
-                 ORDER BY upload_date DESC";
-        $result = $conn->query($query);
-        $files = [];
-        while($row = $result->fetch_assoc()) {
-            $files[] = $row;
+        try {
+            $query = "SELECT * FROM monthly_files ORDER BY upload_date DESC";
+            $result = $conn->query($query);
+            
+            $files = [];
+            while($row = $result->fetch_assoc()) {
+                $files[] = [
+                    'id' => $row['id'],
+                    'filename' => $row['filename'],
+                    'upload_date' => $row['upload_date']
+                ];
+            }
+            
+            echo json_encode($files);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         }
-        echo json_encode($files);
         break;
 
     case 'upload':

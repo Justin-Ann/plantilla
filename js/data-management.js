@@ -2,7 +2,9 @@ class DataManagement {
     constructor() {
         this.initializeTabs();
         this.initializeDivisionHandlers();
-        this.spreadsheet = new PlantillaSpreadsheet('spreadsheet-container');
+        if (typeof PlantillaSpreadsheet !== 'undefined') {
+            this.spreadsheet = new PlantillaSpreadsheet('spreadsheet-container');
+        }
     }
 
     initializeTabs() {

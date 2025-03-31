@@ -20,7 +20,7 @@ const Auth = {
 
     async login(email, password) {
         try {
-            const response = await fetch('/api/auth.php?action=login', {
+            const response = await fetch('/HRIS/api/auth.php?action=login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -32,6 +32,7 @@ const Auth = {
                 localStorage.setItem('auth_token', data.token);
                 localStorage.setItem('user_role', data.role);
                 this.showMainContent();
+                window.location.href = '/HRIS/dashboard.php'; // Add redirect
                 return true;
             }
             return false;
@@ -43,7 +44,7 @@ const Auth = {
 
     async register(fullName, email, password) {
         try {
-            const response = await fetch('api/auth.php?action=register', {
+            const response = await fetch('/HRIS/api/auth.php?action=register', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

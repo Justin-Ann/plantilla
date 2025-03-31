@@ -76,9 +76,23 @@ class PlantillaSpreadsheet {
     }
 
     init() {
+        this.loadDivisions();
         this.setupGrid();
-        this.setupDropdowns();
         this.bindEvents();
+    }
+
+    async loadDivisions() {
+        try {
+            const response = await fetch('/HRIS/api/divisions.php');
+            this.divisions = await response.json();
+        } catch (error) {
+            console.error('Error loading divisions:', error);
+            this.divisions = [];
+        }
+    }
+
+    getDivisionList() {
+        return this.divisions?.map(d => d.division_name) || [];
     }
 
     setupGrid() {

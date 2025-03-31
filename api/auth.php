@@ -21,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $data = json_decode(file_get_contents('php://input'), true);
     
     if (isset($_GET['action'])) {
-        switch ($_GET['action']) {  // Fixed syntax error
+        switch ($_GET['action']) {
             case 'login':
                 // Login logic
                 $email = $data['email'];
@@ -46,46 +46,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             case 'register':
                 try {
-                    if (empty($data['email']) || empty($data['password']) || empty($data['full_name'])) {
-                        throw new Exception('All fields are required');
+                    // Validate input
+                    if (!isset($data['email'], $data['password'], $data['full_name'])) {
+                        throw new Exception('Missing required fields');
                     }
 
-                    $userEmail = filter_var($data['email'], FILTER_VALIDATE_EMAIL);
-                    if (!$userEmail) {
+                    $email = filter_var($data['email'], FILTER_VALIDATE_EMAIL);
+                    $password = $data['password'];
+                    $fullName = trim($data['full_name']);
+
+                    if (!$email) {
                         throw new Exception('Invalid email format');
                     }
 
-                    // Check existing email
-                    $stmt = $conn->prepare("SELECT id FROM users WHERE email = ?");
-                    if (!$stmt) {
-                        throw new Exception($conn->error);
+                    if (strlen($password) < 6) {
+                        throw new Exception('Password must be at least 6 characters');
                     }
-                    
-                    $stmt->bind_param("s", $userEmail);
+
+                    if (empty($fullName)) {
+                        throw new Exception('Full name is required');
+                    }
+
+                    // Check for existing email
+                    $stmt = $mysqli->prepare("SELECT id FROM users WHERE email = ?");
+                    if (!$stmt) {
+                        throw new Exception('Database error: ' . $mysqli->error);
+                    }
+
+                    $stmt->bind_param("s", $email);
                     $stmt->execute();
-                    if ($stmt->get_result()->num_rows > 0) {
+                    $existingUser = $stmt->get_result()->fetch_assoc();
+                    
+                    if ($existingUser) {
                         throw new Exception('Email already registered');
                     }
 
-                    // Create new user
-                    $password = password_hash($data['password'], PASSWORD_DEFAULT);
-                    $fullName = $data['full_name'];
+                    // Insert new user
+                    $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
                     $token = bin2hex(random_bytes(32));
                     $status = 'active';
                     $emailVerified = 1;
 
-                    $stmt = $conn->prepare("INSERT INTO users (email, password, full_name, verification_token, status, email_verified) VALUES (?, ?, ?, ?, ?, ?)");
+                    $stmt = $mysqli->prepare("INSERT INTO users (email, password, full_name, verification_token, status, email_verified) VALUES (?, ?, ?, ?, ?, ?)");
                     if (!$stmt) {
-                        throw new Exception($conn->error);
+                        throw new Exception('Database error: ' . $mysqli->error);
                     }
 
-                    $stmt->bind_param("sssssi", $userEmail, $password, $fullName, $token, $status, $emailVerified);
+                    $stmt->bind_param("sssssi", $email, $hashedPassword, $fullName, $token, $status, $emailVerified);
                     
                     if (!$stmt->execute()) {
-                        throw new Exception($stmt->error);
+                        throw new Exception('Failed to create account: ' . $stmt->error);
                     }
-
-                    sendVerificationEmail($userEmail, $token);
 
                     echo json_encode([
                         'success' => true,
@@ -93,7 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ]);
 
                 } catch (Exception $e) {
-                    error_log("Registration error: " . $e->getMessage());
+                    error_log('Registration error: ' . $e->getMessage());
                     http_response_code(400);
                     echo json_encode([
                         'success' => false,

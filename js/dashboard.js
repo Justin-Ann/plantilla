@@ -7,7 +7,7 @@ const Dashboard = {
 
     async loadStatusCounts() {
         try {
-            const response = await fetch('/api/status-counts.php');
+            const response = await fetch('/HRIS/api/status-counts.php');
             const data = await response.json();
             
             // Update status counts in UI
@@ -21,7 +21,7 @@ const Dashboard = {
 
     async loadMonthlyFiles() {
         try {
-            const response = await fetch('/api/monthly-files.php');
+            const response = await fetch('/HRIS/api/monthly-files.php');
             const files = await response.json();
             
             const container = document.getElementById('monthly-files');
@@ -41,7 +41,7 @@ const Dashboard = {
 
     async loadRecentFiles() {
         try {
-            const response = await fetch('/api/recent-files.php');
+            const response = await fetch('/HRIS/api/recent-files.php');
             const files = await response.json();
             
             const container = document.getElementById('recent-files');

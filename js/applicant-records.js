@@ -70,21 +70,29 @@ class ApplicantRecords {
         });
 
         // Load divisions
-        const response = await fetch('/api/divisions.php');
-        const divisions = await response.json();
-        const divisionFilter = document.getElementById('division-filter-records');
-        divisions.forEach(division => {
-            const option = document.createElement('option');
-            option.value = division.id;
-            option.textContent = division.name;
-            divisionFilter.appendChild(option);
-        });
+        try {
+            const response = await fetch('/HRIS/api/divisions.php');
+            const divisions = await response.json();
+            const divisionFilter = document.getElementById('division-filter-records');
+            divisions.forEach(division => {
+                const option = document.createElement('option');
+                option.value = division.id;
+                option.textContent = division.name;
+                divisionFilter.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Error loading divisions:', error);
+        }
     }
 
     bindEvents() {
-        document.getElementById('month-filter').addEventListener('change', () => this.applyFilters());
-        document.getElementById('division-filter-records').addEventListener('change', () => this.applyFilters());
-        document.getElementById('search-applicant').addEventListener('input', debounce(() => this.searchApplicants(), 300));
+        const monthFilter = document.getElementById('month-filter');
+        const divisionFilter = document.getElementById('division-filter-records');
+        const searchApplicant = document.getElementById('search-applicant');
+
+        if (monthFilter) monthFilter.addEventListener('change', () => this.applyFilters());
+        if (divisionFilter) divisionFilter.addEventListener('change', () => this.applyFilters());
+        if (searchApplicant) searchApplicant.addEventListener('input', debounce(() => this.searchApplicants(), 300));
     }
 
     async applyFilters() {

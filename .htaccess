@@ -4,10 +4,12 @@ RewriteBase /HRIS/
 # Handle API requests
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^api/(.*)$ api/$1.php [L,QSA]
+RewriteRule ^api/(.*)$ api/$1 [L,QSA]
 
-# Prevent direct access to .php files
+# Serve index.html for root
+RewriteRule ^$ index.html [L]
+
+# Allow PHP files
 <FilesMatch "\.php$">
-    Order Allow,Deny
-    Allow from all
+    Require all granted
 </FilesMatch>
