@@ -83,12 +83,28 @@
                 <div id="office-org-content" class="tab-content">
                     <div class="division-filter">
                         <input type="month" id="division-month-filter">
+                        <button id="load-division-files" class="action-btn">Load Files</button>
                     </div>
                     <div class="division-list">
-                        <!-- Division items will be dynamically added here -->
-                        <div class="division-item" data-division-code="1">Office of the Administrator</div>
-                        <div class="division-item" data-division-code="2">Administrative Division</div>
-                        <!-- Add all 43 divisions -->
+                        <?php
+                        $divisions = [
+                            ['code' => 1, 'name' => 'Office of the Administrator'],
+                            ['code' => 2, 'name' => 'Administrative Division'],
+                            // ...add all 43 divisions here
+                        ];
+                        
+                        foreach($divisions as $div): ?>
+                        <div class="division-item" data-division-code="<?= $div['code'] ?>">
+                            <div class="division-header">
+                                <span class="division-code"><?= $div['code'] ?></span>
+                                <span class="division-name"><?= $div['name'] ?></span>
+                            </div>
+                            <div class="division-actions">
+                                <button class="view-data-btn">View Data</button>
+                                <button class="open-files-btn">Open Files</button>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
                     </div>
                 </div>
 
@@ -110,24 +126,44 @@
             
             <div id="applicants" class="page">
                 <h2>Applicants Records</h2>
-                <div class="search-section">
+                <div class="filters-section">
+                    <select id="month-filter">
+                        <option value="">Select Month</option>
+                        <!-- Months will be populated dynamically -->
+                    </select>
+                    <select id="division-filter">
+                        <option value="">Select Division</option>
+                        <!-- Divisions will be populated dynamically -->
+                    </select>
                     <input type="text" id="applicant-search" placeholder="Search by name...">
-                    <button id="add-applicant-btn">Add New Applicant</button>
                 </div>
                 
                 <div class="data-table">
                     <table id="applicants-table">
                         <thead>
                             <tr>
+                                <th>ID NO.</th>
                                 <th>FULLNAME</th>
+                                <th>LAST NAME</th>
+                                <th>FIRST NAME</th>
+                                <th>MIDDLE NAME</th>
+                                <th>EXTNAME</th>
+                                <th>MI</th>
                                 <th>SEX</th>
                                 <th>POSITION TITLE</th>
+                                <th>ITEM NUMBER</th>
                                 <th>TECHCODE</th>
+                                <th>LEVEL</th>
+                                <th>APPOINTMENT STATUS</th>
+                                <th>SG</th>
+                                <th>STEP</th>
+                                <th>MONTHLY SALARY</th>
                                 <th>DATE OF BIRTH</th>
+                                <th>DATE ORIG. APPT.</th>
+                                <th>DATE GOVT SRVC</th>
                                 <th>DATE LAST PROMOTION</th>
                                 <th>DATE LAST INCREMENT</th>
                                 <th>DATE OF LONGEVITY</th>
-                                <th>APPOINTMENT STATUS</th>
                                 <th>ACTIONS</th>
                             </tr>
                         </thead>

@@ -782,19 +782,128 @@ td[data-type]:hover {
 
 /* Division Management Styles */
 .division-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 15px;
+    max-height: calc(100vh - 250px);
+    overflow-y: auto;
+}
+
+.division-item {
+    background: white;
+    padding: 15px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.division-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.division-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.division-code {
+    background: var(--primary-color);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-weight: bold;
+    min-width: 30px;
+    text-align: center;
+}
+
+.division-name {
+    font-weight: 500;
+}
+
+.division-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.view-data-btn, .open-files-btn {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.view-data-btn {
+    background: var(--primary-color);
+    color: white;
+}
+
+.open-files-btn {
+    background: var(--secondary-color);
+    color: var(--text-color);
+}
+
+.division-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 15px;
     padding: 15px;
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
 }
 
 .division-item {
-    background: var(--light-color);
+    background: white;
     padding: 15px;
+    margin-bottom: 10px;
     border-radius: 4px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.division-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.division-code {
+    background: var(--primary-color);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-weight: bold;
+}
+
+.division-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.view-data-btn, .open-files-btn {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.view-data-btn {
+    background: var(--primary-color);
+    color: white;
+}
+
+.open-files-btn {
+    background: var(--secondary-color);
+    color: var(--text-color);
 }
 
 .division-item:hover {
@@ -802,6 +911,44 @@ td[data-type]:hover {
     box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     background-color: var(--primary-color);
     color: var(--light-color);
+}
+
+.division-code {
+    font-weight: bold;
+    margin-right: 10px;
+    padding: 2px 6px;
+    background: var(--primary-color);
+    color: var(--light-color);
+    border-radius: 3px;
+}
+
+.division-name {
+    flex: 1;
+}
+
+.open-files-btn {
+    padding: 4px 8px;
+    margin-left: 10px;
+    background: var(--secondary-color);
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.division-item:hover .open-files-btn {
+    background: var(--light-color);
+    color: var(--primary-color);
+}
+
+.division-filter {
+    padding: 15px;
+    margin-bottom: 15px;
+    background: var(--light-color);
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .division-filter {

@@ -1632,4 +1632,144 @@ function loadAdminUsers() {
     });
 }
 
+// Add logout confirmation
+$('.logout a').on('click', function(e) {
+    e.preventDefault();
+    if (confirm('Are you sure you want to logout?')) {
+        window.location.href = this.href;
+    }
+});
+
+// Add this function to handle tab switching
+function switchToSpreadsheetTab() {
+    $('.tab[data-tab="spreadsheet"]').click();
+    $('.tab-content').removeClass('active');
+    $('#spreadsheet-content').addClass('active');
+}
+
+// Add event handler for Office and Organizational Code tab
+$('.tab[data-tab="office-org"]').on('click', function() {
+    loadDivisionList();
+});
+
+// Function to load division list
+function loadDivisionList() {
+    const divisions = [
+        { code: 1, name: 'Office of the Administrator' },
+        // ... add all 43 divisions
+    ];
+    
+    const container = $('.division-list');
+    container.empty();
+    
+    divisions.forEach(div => {
+        const divItem = $(`
+            <div class="division-item" data-division-code="${div.code}">
+                <div class="division-header">
+                    <span class="division-code">${div.code}</span>
+                    <span class="division-name">${div.name}</span>
+                </div>
+                <div class="division-actions">
+                    <button class="view-data-btn">View Data</button>
+                    <button class="open-files-btn">Open Files</button>
+                </div>
+            </div>
+        `);
+        
+        // Add click handlers
+        divItem.find('.view-data-btn').on('click', function() {
+            const divCode = $(this).closest('.division-item').data('division-code');
+            loadDivisionData(divCode);
+            switchToSpreadsheetTab();
+        });
+        
+        divItem.find('.open-files-btn').on('click', function(e) {
+            e.stopPropagation();
+            const divCode = $(this).closest('.division-item').data('division-code');
+            openDivisionFiles(divCode);
+        });
+        
+        container.append(divItem);
+    });
+}
+
+// Function to load division data
+function loadDivisionData(divisionCode) {
+    const monthYear = $('#division-month-filter').val();
+    
+    $.ajax({
+        url: `${API_URL}/divisions/${divisionCode}/data`,
+        method: 'GET',
+        data: { month_year: monthYear },
+        success: function(response) {
+            if (response.success) {
+                displayDivisionData(response.data);
+            }
+        },
+        error: function(xhr) {
+            alert('Error loading division data');
+        }
+    });
+}
+
+// Function to display division data
+function displayDivisionData(data) {
+    const table = $('#spreadsheet-table');
+    table.empty();
+    
+    if (!data.length) {
+        table.html('<tr><td colspan="100%">No data found for this division</td></tr>');
+        return;
+    }
+    
+    // Create headers
+    const headers = ['PLANTILLA NO.', 'DIVISION', 'SECTION', 'POSITION TITLE', 'SG', 'STEP', 'STATUS', 'REMARKS', 'ACTIONS'];
+    const headerRow = $('<tr>');
+    headers.forEach(header => {
+        headerRow.append($('<th>').text(header));
+    });
+    table.append($('<thead>').append(headerRow));
+    
+    // Create body
+    const tbody = $('<tbody>');
+    data.forEach(row => {
+        const tr = $('<tr>');
+        tr.append(`
+            <td>${row.plantilla_no}</td>
+            <td>${row.plantilla_division}</td>
+            <td>${row.plantilla_section}</td>
+            <td>${row.position_title}</td>
+            <td data-type="sg">${row.sg}</td>
+            <td data-type="step">${row.step}</td>
+            <td data-type="status">${row.status}</td>
+            <td data-type="remarks">${row.remarks}</td>
+            <td>
+                <button class="action-btn edit-btn" onclick="editRow(${row.id})">Edit</button>
+            </td>
+        `);
+        tbody.append(tr);
+    });
+    table.append(tbody);
+}
+
+// Function to open division files
+function openDivisionFiles(divisionCode) {
+    const monthYear = $('#division-month-filter').val();
+    if (!monthYear) {
+        alert('Please select a month first');
+        return;
+    }
+    
+    $.ajax({
+        url: `${API_URL}/divisions/${divisionCode}/files`,
+        method: 'GET',
+        data: { month_year: monthYear },
+        success: function(response) {
+            if (response.success) {
+                showFilesModal(response.files, divisionCode);
+            }
+        }
+    });
+}
+
 // ...rest of existing code...
