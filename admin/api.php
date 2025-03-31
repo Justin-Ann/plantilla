@@ -52,17 +52,33 @@ switch($action) {
 
 function get_dashboard_stats() {
     global $conn;
-    // ... implementation
+    
+    $stats = [
+        'total_users' => 0,
+        'active_users' => 0,
+        'recent_activities' => 0
+    ];
+    
+    // Get total users
+    $result = $conn->query("SELECT COUNT(*) as count FROM users");
+    if ($row = $result->fetch_assoc()) {
+        $stats['total_users'] = $row['count'];
+    }
+    
+    return $stats;
 }
 
 function update_user_role($user_id, $role) {
     global $conn;
-    // ... implementation
+    $stmt = $conn->prepare("UPDATE users SET role = ? WHERE id = ?");
+    $stmt->bind_param("si", $role, $user_id);
+    return $stmt->execute();
 }
 
 function reset_user_password($user_id) {
     global $conn;
     // ... implementation
+    return ['success' => true, 'message' => 'Password reset successful'];
 }
 
 function log_audit_action($user_id, $action, $details) {

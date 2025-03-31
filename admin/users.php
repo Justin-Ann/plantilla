@@ -3,6 +3,16 @@ session_start();
 require_once "../config.php";
 require_once "../auth_middleware.php";
 
+function send_password_reset_email($email, $temp_password) {
+    $to = $email;
+    $subject = "Password Reset";
+    $message = "Your temporary password is: " . $temp_password . "\n\n";
+    $message .= "Please login and change your password as soon as possible.";
+    $headers = "From: noreply@yourdomain.com";
+
+    mail($to, $subject, $message, $headers);
+}
+
 check_admin();
 
 // Handle user detail updates
