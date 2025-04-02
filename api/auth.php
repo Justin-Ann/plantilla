@@ -1,127 +1,102 @@
 <?php
-require_once 'config.php';
+require_once "../config.php";
+session_start();
+
 header('Content-Type: application/json');
 
-// Ensure database connection is available
-global $conn;
-
-function sendVerificationEmail($userEmail, $token) {
-    global $conn;
-    if (!$conn) return false;
-    
-    $stmt = $conn->prepare("UPDATE users SET email_verified = 1, status = 'active' WHERE verification_token = ?");
-    if ($stmt) {
-        $stmt->bind_param("s", $token);
-        return $stmt->execute();
-    }
-    return false;
-}
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+try {
     $data = json_decode(file_get_contents('php://input'), true);
-    
-    if (isset($_GET['action'])) {
-        switch ($_GET['action']) {
-            case 'login':
-                // Login logic
-                $email = $data['email'];
-                $password = $data['password'];
-                
-                $stmt = $conn->prepare("SELECT * FROM users WHERE email = ? AND email_verified = 1");
-                $stmt->bind_param("s", $email);
-                $stmt->execute();
-                $result = $stmt->get_result();
-                
-                if ($user = $result->fetch_assoc()) {
-                    if (password_verify($password, $user['password'])) {
-                        session_start();
-                        $_SESSION['user_id'] = $user['id'];
-                        $_SESSION['role'] = $user['role'];
-                        echo json_encode(['success' => true, 'role' => $user['role']]);
-                    } else {
-                        echo json_encode(['success' => false, 'message' => 'Invalid credentials']);
-                    }
+    $action = $data['action'] ?? $_GET['action'] ?? '';
+
+    switch($action) {
+        case 'register':
+            // Validate input
+            if (empty($data['email']) || empty($data['password']) || empty($data['full_name'])) {
+                throw new Exception('All fields are required');
+            }
+
+            // Check if email already exists
+            $stmt = $conn->prepare("SELECT id FROM users WHERE email = ?");
+            $stmt->bind_param("s", $data['email']);
+            $stmt->execute();
+            if ($stmt->get_result()->num_rows > 0) {
+                throw new Exception('Email already registered');
+            }
+
+            // Generate verification token
+            $verificationToken = bin2hex(random_bytes(32));
+            
+            // Insert new user
+            $stmt = $conn->prepare("INSERT INTO users (full_name, email, password, verification_token) VALUES (?, ?, ?, ?)");
+            $hashedPassword = password_hash($data['password'], PASSWORD_DEFAULT);
+            $stmt->bind_param("ssss", 
+                $data['full_name'],
+                $data['email'],
+                $hashedPassword,
+                $verificationToken
+            );
+
+            if ($stmt->execute()) {
+                // Send verification email
+                $verifyUrl = "http://" . $_SERVER['HTTP_HOST'] . "/HRIS/verify.php?token=" . $verificationToken;
+                $to = $data['email'];
+                $subject = "Verify your HRIS account";
+                $message = "Welcome to HRIS! Please click this link to verify your account: " . $verifyUrl;
+                $headers = "From: noreply@hris.com";
+
+                mail($to, $subject, $message, $headers);
+
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Registration successful! Please check your email for verification.'
+                ]);
+            } else {
+                throw new Exception('Registration failed');
+            }
+            break;
+
+        case 'login':
+            $email = $data['email'] ?? '';
+            $password = $data['password'] ?? '';
+            
+            $stmt = $conn->prepare("SELECT id, password, role, email_verified FROM users WHERE email = ?");
+            $stmt->bind_param("s", $email);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            if ($user = $result->fetch_assoc()) {
+                if (!$user['email_verified']) {
+                    echo json_encode(['success' => false, 'message' => 'Please verify your email first']);
+                    exit;
                 }
-                break;
-
-            case 'register':
-                try {
-                    // Validate input
-                    if (!isset($data['email'], $data['password'], $data['full_name'])) {
-                        throw new Exception('Missing required fields');
-                    }
-
-                    $email = filter_var($data['email'], FILTER_VALIDATE_EMAIL);
-                    $password = $data['password'];
-                    $fullName = trim($data['full_name']);
-
-                    if (!$email) {
-                        throw new Exception('Invalid email format');
-                    }
-
-                    if (strlen($password) < 6) {
-                        throw new Exception('Password must be at least 6 characters');
-                    }
-
-                    if (empty($fullName)) {
-                        throw new Exception('Full name is required');
-                    }
-
-                    // Check for existing email
-                    $stmt = $mysqli->prepare("SELECT id FROM users WHERE email = ?");
-                    if (!$stmt) {
-                        throw new Exception('Database error: ' . $mysqli->error);
-                    }
-
-                    $stmt->bind_param("s", $email);
-                    $stmt->execute();
-                    $existingUser = $stmt->get_result()->fetch_assoc();
+                
+                if (password_verify($password, $user['password'])) {
+                    $_SESSION['user_id'] = $user['id'];
+                    $_SESSION['role'] = $user['role'];
+                    $_SESSION['loggedin'] = true;
                     
-                    if ($existingUser) {
-                        throw new Exception('Email already registered');
-                    }
-
-                    // Insert new user
-                    $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
                     $token = bin2hex(random_bytes(32));
-                    $status = 'active';
-                    $emailVerified = 1;
-
-                    $stmt = $mysqli->prepare("INSERT INTO users (email, password, full_name, verification_token, status, email_verified) VALUES (?, ?, ?, ?, ?, ?)");
-                    if (!$stmt) {
-                        throw new Exception('Database error: ' . $mysqli->error);
-                    }
-
-                    $stmt->bind_param("sssssi", $email, $hashedPassword, $fullName, $token, $status, $emailVerified);
                     
-                    if (!$stmt->execute()) {
-                        throw new Exception('Failed to create account: ' . $stmt->error);
-                    }
-
                     echo json_encode([
                         'success' => true,
-                        'message' => 'Registration successful! You can now login.'
+                        'token' => $token,
+                        'role' => $user['role']
                     ]);
-
-                } catch (Exception $e) {
-                    error_log('Registration error: ' . $e->getMessage());
-                    http_response_code(400);
-                    echo json_encode([
-                        'success' => false,
-                        'message' => $e->getMessage()
-                    ]);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Invalid password']);
                 }
-                break;
+            } else {
+                echo json_encode(['success' => false, 'message' => 'User not found']);
+            }
+            break;
 
-            case 'verify_email':
-                $token = $data['token'];
-                $stmt = $conn->prepare("UPDATE users SET email_verified = 1 WHERE verification_token = ?");
-                $stmt->bind_param("s", $token);
-                if ($stmt->execute()) {
-                    echo json_encode(['success' => true, 'message' => 'Email verified successfully']);
-                }
-                break;
-        }
+        // ...existing code for other actions...
     }
+} catch (Exception $e) {
+    http_response_code(400);
+    echo json_encode([
+        'success' => false,
+        'message' => $e->getMessage()
+    ]);
 }
 ?>

@@ -1,44 +1,49 @@
-// Update API URL to match your server configuration
-const API_URL = 'http://localhost:5000/api';
+// Define base API URL using proper HTTP protocol
+window.API_URL = 'http://localhost/HRIS/api';
 
-// Add server connectivity check
-function checkServerConnectivity() {
-    $.ajax({
-        url: `${API_URL}/health-check`,
-        type: 'GET',
-        timeout: 5000,
-        success: function(response) {
-            console.log('Server is running');
-        },
-        error: function() {
-            alert('Server is not running. Please ensure the server is started.');
-        }
-    });
+// Update API URL to use relative path without redeclaring
+function handleApiError(error, context) {
+    console.error(`${context} error:`, error);
+    if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+        console.warn('API endpoint not accessible. Check server configuration.');
+    }
 }
 
-// Update formatPhTime function
-function formatPhTime(date) {
-    if (!date) return '';
+// Update fetch calls with error handling
+async function fetchApi(endpoint, options = {}) {
+    if (!Auth.checkAuth()) {
+        throw new Error('Not authenticated');
+    }
     
-    // If date is a string, convert to Date object
-    const dateObj = typeof date === 'string' ? new Date(date) : date;
-    
-    // Check for invalid date
-    if (isNaN(dateObj.getTime())) return '';
-    
-    // Format the date in Philippine time
-    return dateObj.toLocaleString('en-US', {
-        timeZone: 'Asia/Manila',
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: 'numeric',
-        hour12: true
-    });
+    try {
+        const response = await fetch(`${API_URL}/${endpoint}`, {
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        return await response.json();
+    } catch (error) {
+        if (error.message === 'Not authenticated') {
+            Auth.showLoginScreen();
+        }
+        handleApiError(error, endpoint);
+        throw error;
+    }
 }
 
 $(document).ready(function() {
+    // Check authentication before initializing
+    if (!Auth.checkAuth()) {
+        return;
+    }
+
     // Check server connectivity on page load
     checkServerConnectivity();
 
@@ -1772,4 +1777,262 @@ function openDivisionFiles(divisionCode) {
     });
 }
 
+// Add mobile sidebar toggle
+function initializeMobileNav() {
+    const toggleBtn = document.createElement('button');
+    toggleBtn.className = 'mobile-nav-toggle';
+    toggleBtn.innerHTML = '<i class="material-icons">menu</i>';
+    document.querySelector('.main-content').prepend(toggleBtn);
+
+    toggleBtn.addEventListener('click', () => {
+        document.querySelector('.sidebar').classList.toggle('active');
+    });
+
+    // Close sidebar when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.sidebar') && 
+            !e.target.closest('.mobile-nav-toggle') && 
+            window.innerWidth <= 768) {
+            document.querySelector('.sidebar').classList.remove('active');
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', initializeMobileNav);
+
 // ...rest of existing code...
+
+// Navigation Handler
+document.addEventListener('DOMContentLoaded', () => {
+    // Navigation click handlers
+    document.querySelectorAll('.nav-menu a').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            const pageId = link.getAttribute('data-page');
+            if (!pageId) return;
+
+            // Update active states
+            document.querySelectorAll('.nav-menu a').forEach(el => el.classList.remove('active'));
+            link.classList.add('active');
+            
+            // Hide all pages
+            document.querySelectorAll('.page').forEach(page => {
+                page.style.display = 'none';
+            });
+            
+            // Show selected page
+            const targetPage = document.getElementById(pageId);
+            if (targetPage) {
+                targetPage.style.display = 'block';
+                
+                // Initialize page-specific content
+                switch(pageId) {
+                    case 'dashboard':
+                        if (window.Dashboard) Dashboard.init();
+                        break;
+                    case 'data-management':
+                        if (window.DataManagement) new DataManagement();
+                        break;
+                    case 'applicant-records':
+                        if (window.ApplicantRecords) new ApplicantRecords();
+                        break;
+                    case 'admin':
+                        if (window.AdminPanel) new AdminPanel();
+                        break;
+                }
+            }
+        });
+    });
+
+    // Initialize dashboard by default
+    const defaultPage = document.querySelector('.nav-menu a[data-page="dashboard"]');
+    if (defaultPage) {
+        defaultPage.click();
+    }
+});
+
+function initializeDataManagement() {
+    // Show first tab by default
+    const firstTab = document.querySelector('.tab[data-tab="divisions"]');
+    if (firstTab) {
+        firstTab.click();
+    }
+
+    // Initialize tabs
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            
+            // Add active class to clicked tab
+            tab.classList.add('active');
+            
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.style.display = 'none';
+            });
+            
+            // Show selected tab content
+            const tabId = tab.getAttribute('data-tab');
+            const targetContent = document.getElementById(`${tabId}-content`);
+            if (targetContent) {
+                targetContent.style.display = 'block';
+                
+                // Initialize tab-specific content
+                if (tabId === 'spreadsheet') {
+                    if (window.spreadsheetManager) {
+                        window.spreadsheetManager.refreshGrid();
+                    }
+                }
+            }
+        });
+    });
+}
+
+function loadApplicantRecords() {
+    if (window.ApplicantRecords) {
+        const applicantManager = new ApplicantRecords();
+        applicantManager.loadData();
+    }
+}
+
+function loadAdminPanel() {
+    // Load admin users and data
+    if (window.AdminPanel) {
+        const adminPanel = new AdminPanel();
+        adminPanel.initialize();
+    }
+}
+
+// Update navigation handler
+document.addEventListener('DOMContentLoaded', () => {
+    // Page navigation
+    const navLinks = document.querySelectorAll('.nav-menu a');
+    
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            // Remove active class from all links and add to clicked one
+            navLinks.forEach(l => l.classList.remove('active'));
+            link.classList.add('active');
+            
+            // Get target page
+            const targetPage = link.getAttribute('data-page');
+            
+            // Hide all pages
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+                page.style.display = 'none';
+            });
+            
+            // Show target page
+            const pageElement = document.getElementById(targetPage);
+            if (pageElement) {
+                pageElement.classList.add('active');
+                pageElement.style.display = 'block';
+                
+                // Initialize specific page content
+                switch(targetPage) {
+                    case 'dashboard':
+                        Dashboard.init();
+                        break;
+                    case 'data-management':
+                        if (!window.dataManagement) {
+                            window.dataManagement = new DataManagement();
+                        }
+                        break;
+                    case 'applicant-records':
+                        if (!window.applicantRecords) {
+                            window.applicantRecords = new ApplicantRecords();
+                        }
+                        break;
+                    case 'admin':
+                        loadAdminPanel();
+                        break;
+                }
+            }
+        });
+    });
+
+    // Initialize first page
+    document.querySelector('.nav-menu a[data-page="dashboard"]').click();
+});
+
+// ...existing code...
+
+// Remove duplicate navigation handlers
+$(document).ready(function() {
+    // Remove existing navigation handlers
+    $('.nav-menu a').off('click');
+    
+    // Initialize API error handling
+    initializeErrorHandling();
+    
+    // Initialize form handlers
+    initializeFormHandlers();
+    
+    // Initialize filters
+    initializeFilters();
+});
+
+function initializeErrorHandling() {
+    $(document).ajaxError((event, jqXHR, settings, error) => {
+        console.error('API Error:', {
+            url: settings.url,
+            error: error,
+            status: jqXHR.status,
+            response: jqXHR.responseText
+        });
+        handleApiError(error, settings.url);
+    });
+}
+
+// ...existing code...
+
+function initializeFormHandlers() {
+    // Upload form handler
+    $('#upload-form').on('submit', function(e) {
+        e.preventDefault();
+        handleFileUpload(this);
+    });
+}
+
+function initializeFilters() {
+    $('#status-filter').on('change', function() {
+        loadCleanData($(this).val());
+    });
+}
+
+// Update document ready handler
+$(document).ready(function() {
+    if (!Auth.checkAuth()) return;
+    
+    initializeErrorHandling();
+    initializeFormHandlers();
+    initializeFilters();
+    
+    // Set default month value for upload
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    $('#upload-month').val(currentMonth);
+});
+
+function loadDivisions() {
+    $.ajax({
+        url: `${API_URL}/divisions.php`,
+        method: 'GET',
+        success: function(response) {
+            if (response.success) {
+                // ...existing code...
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error loading divisions:', error);
+            handleApiError(error, 'divisions');
+        }
+    });
+}
+
+// ...existing code...

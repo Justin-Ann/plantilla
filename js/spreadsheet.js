@@ -70,72 +70,115 @@ class SpreadsheetEditor {
 class PlantillaSpreadsheet {
     constructor(containerId) {
         this.container = document.getElementById(containerId);
-        this.data = [];
-        this.currentDivision = null;
+        this.API_URL = 'http://localhost/HRIS/api';
         this.init();
     }
 
-    init() {
-        this.loadDivisions();
-        this.setupGrid();
-        this.bindEvents();
+    async init() {
+        try {
+            await this.loadDivisions();
+            this.setupGrid();
+            this.bindEvents();
+        } catch (error) {
+            console.error('Initialization error:', error);
+            this.handleError(error);
+        }
     }
 
     async loadDivisions() {
         try {
-            const response = await fetch('/HRIS/api/divisions.php');
-            this.divisions = await response.json();
+            const response = await fetch(`${API_URL}/divisions.php`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            
+            if (!data.success) {
+                throw new Error(data.message || 'Failed to load divisions');
+            }
+            
+            this.divisions = data.data;
+            return data.data;
         } catch (error) {
-            console.error('Error loading divisions:', error);
-            this.divisions = [];
+            console.error('Spreadsheet error:', {
+                message: error.message,
+                stack: error.stack,
+                type: error.name
+            });
+            
+            // Show user-friendly error message
+            this.showError('Unable to load division data. Please check your database connection.');
+            throw error;
         }
     }
 
+    showError(message) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-message';
+        errorDiv.textContent = message;
+        
+        // Remove any existing error messages
+        const existingError = this.container.querySelector('.error-message');
+        if (existingError) {
+            existingError.remove();
+        }
+        
+        this.container.prepend(errorDiv);
+    }
+
+    handleError(error) {
+        // Display user-friendly error message
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-message';
+        errorDiv.textContent = 'Failed to load data. Please check your connection and try again.';
+        this.container.appendChild(errorDiv);
+        
+        // Log detailed error for debugging
+        console.error('Spreadsheet error:', {
+            message: error.message,
+            stack: error.stack,
+            type: error.name
+        });
+    }
+
     getDivisionList() {
-        return this.divisions?.map(d => d.division_name) || [];
+        return this.divisions?.map(d => d.name) || [];
     }
 
     setupGrid() {
         this.grid = new Handsontable(this.container, {
             data: this.data,
             rowHeaders: true,
-            colHeaders: [
-                'ID No.', 'Full Name', 'Last Name', 'First Name', 'Middle Name',
-                'Ext Name', 'MI', 'Sex', 'Position Title', 'Item Number',
-                'Tech Code', 'Level', 'Appointment Status', 'SG', 'Step',
-                'Monthly Salary', 'Date of Birth', 'Date Orig. Appt.',
-                'Date Govt Srvc', 'Date Last Promotion', 'Date Last Increment',
-                'Date of Longevity', 'Division'
-            ],
-            columns: [
-                { data: 'id_no' },
-                { data: 'full_name' },
-                { data: 'last_name' },
-                { data: 'first_name' },
-                { data: 'middle_name' },
-                { data: 'ext_name' },
-                { data: 'mi' },
-                { data: 'sex', type: 'dropdown', source: ['Male', 'Female', 'Others'] },
-                { data: 'position_title' },
-                { data: 'item_number' },
-                { data: 'tech_code' },
-                { data: 'level' },
-                { data: 'appointment_status', type: 'dropdown', source: ['Temporary', 'Permanent'] },
-                { data: 'sg', type: 'numeric', min: 1, max: 100 },
-                { data: 'step', type: 'numeric', min: 1, max: 10 },
-                { data: 'monthly_salary', type: 'numeric', numericFormat: { pattern: '₱0,0.00' } },
-                { data: 'date_of_birth', type: 'date' },
-                { data: 'date_orig_appt', type: 'date' },
-                { data: 'date_govt_srvc', type: 'date' },
-                { data: 'date_last_promotion', type: 'date' },
-                { data: 'date_last_increment', type: 'date' },
-                { data: 'date_of_longevity', type: 'date' },
-                { data: 'division', type: 'dropdown', source: this.getDivisionList() }
-            ],
-            filters: true,
-            dropdownMenu: true,
-            contextMenu: true,
-            afterChange: (changes) => this.handleDataChange(changes)
+            colHeaders: true,
+            // Remove invalid ARIA attributes
+            autoRowSize: true,
+            autoColSize: true,
+            multiSelect: true,
+            // Use valid ARIA roles
+            cells: function(row, col) {
+                const cellProperties = {};
+                cellProperties.role = 'gridcell';
+                if (row === 0) {
+                    cellProperties.role = 'columnheader';
+                }
+                return cellProperties;
+            },
+            beforeRenderer: function(TD, row, col) {
+                if (row === 0) {
+                    TD.setAttribute('role', 'columnheader');
+                } else {
+                    TD.setAttribute('role', 'gridcell');
+                }
+            },
+            // Add proper table structure
+            beforeRender: function() {
+                const container = this.rootElement;
+                const table = container.querySelector('.htCore');
+                if (table) {
+                    table.setAttribute('role', 'grid');
+                    table.setAttribute('aria-label', 'Plantilla Data');
+                }
+            }
         });
     }
 
@@ -187,5 +230,10 @@ class PlantillaSpreadsheet {
     }
 }
 
-// Initialize spreadsheet
-new PlantillaSpreadsheet('spreadsheet-container');
+// Initialize only if container exists
+document.addEventListener('DOMContentLoaded', () => {
+    const container = document.getElementById('spreadsheet-container');
+    if (container) {
+        new PlantillaSpreadsheet('spreadsheet-container');
+    }
+});

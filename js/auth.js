@@ -14,6 +14,7 @@ const Auth = {
     },
 
     showMainContent() {
+        if (!this.checkAuth()) return;
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('main-content').style.display = 'flex';
     },
@@ -35,40 +36,42 @@ const Auth = {
                 window.location.href = '/HRIS/dashboard.php'; // Add redirect
                 return true;
             }
+            alert('Login failed: ' + (data.message || 'Invalid credentials.'));
             return false;
         } catch (error) {
             console.error('Login error:', error);
+            alert('An error occurred during login.');
             return false;
         }
     },
 
     async register(fullName, email, password) {
         try {
-            const response = await fetch('/HRIS/api/auth.php?action=register', {
+            const response = await fetch('/HRIS/api/auth.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ 
+                    action: 'register',
                     full_name: fullName, 
-                    email, 
-                    password 
+                    email: email, 
+                    password: password 
                 })
             });
 
             const data = await response.json();
             
             if (data.success) {
-                alert(data.message);
+                alert('Registration successful! Please verify your email.');
                 this.toggleForms('login');
                 return true;
             } else {
-                alert(data.message || 'Registration failed. Please try again.');
-                return false;
+                throw new Error(data.message || 'Registration failed');
             }
         } catch (error) {
             console.error('Registration error:', error);
-            alert('Server error. Please try again later.');
+            alert(error.message || 'Registration failed. Please try again.');
             return false;
         }
     },
@@ -95,38 +98,53 @@ const Auth = {
             localStorage.removeItem('user_role');
             this.showLoginScreen();
         }
+    },
+
+    init() {
+        this.checkAuth();
+        
+        // Initialize event listeners
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+        const showRegisterBtn = document.getElementById('show-register');
+        const showLoginBtn = document.getElementById('show-login');
+
+        if (loginForm) {
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('login-email').value;
+                const password = document.getElementById('login-password').value;
+                await this.login(email, password);
+            });
+        }
+
+        if (registerForm) {
+            registerForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const fullName = document.getElementById('register-name').value;
+                const email = document.getElementById('register-email').value;
+                const password = document.getElementById('register-password').value;
+                await this.register(fullName, email, password);
+            });
+        }
+
+        if (showRegisterBtn) {
+            showRegisterBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.toggleForms('register');
+            });
+        }
+
+        if (showLoginBtn) {
+            showLoginBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.toggleForms('login');
+            });
+        }
     }
 };
 
-// Event Listeners
+// Check authentication on page load
 document.addEventListener('DOMContentLoaded', () => {
-    const loginForm = document.getElementById('login-form');
-    const registerForm = document.getElementById('register-form');
-    const showRegisterBtn = document.getElementById('show-register');
-    const showLoginBtn = document.getElementById('show-login');
-
-    loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const email = document.getElementById('login-email').value;
-        const password = document.getElementById('login-password').value;
-        await Auth.login(email, password);
-    });
-
-    registerForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const fullName = document.getElementById('register-name').value;
-        const email = document.getElementById('register-email').value;
-        const password = document.getElementById('register-password').value;
-        await Auth.register(fullName, email, password);
-    });
-
-    showRegisterBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        Auth.toggleForms('register');
-    });
-
-    showLoginBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        Auth.toggleForms('login');
-    });
+    Auth.init();
 });

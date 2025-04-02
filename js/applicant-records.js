@@ -1,5 +1,6 @@
 class ApplicantRecords {
     constructor() {
+        this.API_URL = 'http://localhost/HRIS/api';
         this.grid = null;
         this.initializeGrid();
         this.bindEvents();
@@ -11,19 +12,42 @@ class ApplicantRecords {
         this.grid = new Handsontable(container, {
             data: [],
             rowHeaders: true,
-            colHeaders: [
-                'ID No.', 'Full Name', 'Last Name', 'First Name', 'Middle Name',
-                'Ext Name', 'MI', 'Sex', 'Position Title', 'Item Number',
-                'Tech Code', 'Level', 'Appointment Status', 'SG', 'Step',
-                'Monthly Salary', 'Date of Birth', 'Date Orig. Appt.',
-                'Date Govt Srvc', 'Date Last Promotion', 'Date Last Increment',
-                'Date of Longevity'
-            ],
+            colHeaders: true,
+            autoRowSize: true,
+            autoColSize: true,
+            multiSelect: true,
+            cells: function(row, col) {
+                const cellProperties = {};
+                cellProperties.role = 'gridcell';
+                if (row === 0) {
+                    cellProperties.role = 'columnheader';
+                }
+                return cellProperties;
+            },
+            beforeRenderer: function(TD, row, col) {
+                if (row === 0) {
+                    TD.setAttribute('role', 'columnheader');
+                } else {
+                    TD.setAttribute('role', 'gridcell');
+                }
+            },
+            beforeRender: function() {
+                const container = this.rootElement;
+                const table = container.querySelector('.htCore');
+                if (table) {
+                    table.setAttribute('role', 'grid');
+                    table.setAttribute('aria-label', 'Applicant Records');
+                }
+            },
             columns: this.getColumnDefinitions(),
             filters: true,
             dropdownMenu: true,
             contextMenu: true,
-            licenseKey: 'non-commercial-and-evaluation'
+            licenseKey: 'non-commercial-and-evaluation',
+            
+            // Disable problematic features
+            customBorders: true,
+            allowInvalid: false
         });
     }
 
@@ -55,34 +79,60 @@ class ApplicantRecords {
     }
 
     async loadFilters() {
-        // Load months and divisions for filters
-        const months = Array.from({length: 12}, (_, i) => ({
-            value: i + 1,
-            text: new Date(2000, i, 1).toLocaleString('default', {month: 'long'})
-        }));
-
-        const monthFilter = document.getElementById('month-filter');
-        months.forEach(month => {
-            const option = document.createElement('option');
-            option.value = month.value;
-            option.textContent = month.text;
-            monthFilter.appendChild(option);
-        });
-
-        // Load divisions
         try {
-            const response = await fetch('/HRIS/api/divisions.php');
-            const divisions = await response.json();
-            const divisionFilter = document.getElementById('division-filter-records');
-            divisions.forEach(division => {
+            // Load months
+            const months = Array.from({length: 12}, (_, i) => ({
+                value: i + 1,
+                text: new Date(2000, i, 1).toLocaleString('default', {month: 'long'})
+            }));
+
+            const monthFilter = document.getElementById('month-filter');
+            months.forEach(month => {
                 const option = document.createElement('option');
-                option.value = division.id;
-                option.textContent = division.name;
-                divisionFilter.appendChild(option);
+                option.value = month.value;
+                option.textContent = month.text;
+                monthFilter.appendChild(option);
             });
+
+            // Load divisions with proper error handling
+            const response = await fetch(`${this.API_URL}/divisions.php`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            
+            const result = await response.json();
+            if (!result.success) {
+                throw new Error(result.message || 'Failed to load divisions');
+            }
+
+            const divisions = result.data;
+            const divisionFilter = document.getElementById('division-filter');
+            
+            if (divisionFilter) {
+                divisionFilter.innerHTML = '<option value="">All Divisions</option>';
+                divisions.forEach(division => {
+                    const option = document.createElement('option');
+                    option.value = division.id;
+                    option.textContent = division.name;
+                    divisionFilter.appendChild(option);
+                });
+            }
+
         } catch (error) {
-            console.error('Error loading divisions:', error);
+            console.error('Error loading filters:', error);
+            this.showError('Failed to load division data. Please check server connection.');
         }
+    }
+
+    showError(message) {
+        const container = document.querySelector('.filters');
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-message';
+        errorDiv.textContent = message;
+        container.prepend(errorDiv);
+        
+        // Remove error after 5 seconds
+        setTimeout(() => errorDiv.remove(), 5000);
     }
 
     bindEvents() {
