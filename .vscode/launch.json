@@ -18,7 +18,7 @@
             "type": "msedge",
             "request": "launch",
             "name": "Open index.html",
-            "file": "c:\\xampp\\htdocs\\HRIS\\index.html"
+            "file": "c:\\xampp\\htdocs\\plantilla\\index.html"
         }
     ]
 }

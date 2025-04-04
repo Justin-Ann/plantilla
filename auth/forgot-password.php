@@ -29,7 +29,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
                         
                         if(mysqli_stmt_execute($update_stmt)) {
                             // Send reset email
-                            $reset_link = "http://".$_SERVER['HTTP_HOST']."/HRIS/auth/reset-password.php?token=".$reset_token;
+                            $reset_link = "http://".$_SERVER['HTTP_HOST']."/plantilla/auth/reset-password.php?token=".$reset_token;
                             $to = $email;
                             $subject = "Password Reset Request";
                             $message = "Click the following link to reset your password: " . $reset_link;

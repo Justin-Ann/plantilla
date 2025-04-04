@@ -1,5 +1,5 @@
 // Temporarily bypass auth checks
-const API_URL = 'http://localhost/HRIS/api';
+const API_URL = 'http://localhost/plantilla/api';
 
 // Add test data for development
 const TEST_USER = {
@@ -19,25 +19,25 @@ $(document).ready(function() {
     $('.admin-only').show();
 
     // Check server connectivity on page load
-    checkServerConnectivity();
+    // checkServerConnectivity();
 
     // Navigation
-    $('.nav-menu a').on('click', function(e) {
-        e.preventDefault();
-        const page = $(this).data('page');
-        showPage(page);
-    });
+    // $('.nav-menu a').on('click', function(e) {
+    //     e.preventDefault();
+    //     const page = $(this).data('page');
+    //     showPage(page);
+    // });
     
     // Tab navigation
-    $('.tab').on('click', function() {
-        const tab = $(this).data('tab');
-        
-        $('.tab').removeClass('active');
-        $(this).addClass('active');
-        
-        $('.tab-content').removeClass('active');
-        $('#' + tab + '-content').addClass('active');
-    });
+        $('.tab').on('click', function() {
+            const tab = $(this).data('tab');
+            
+            $('.tab').removeClass('active');
+            $(this).addClass('active');
+            
+            $('.tab-content').removeClass('active');
+            $('#' + tab + '-content').addClass('active');
+        });
     
     // Load initial data
     loadDashboardCounts();
@@ -265,7 +265,7 @@ $(document).ready(function() {
     });
 
     // Load current month's files on page load
-    loadUploadedFiles();
+    // loadUploadedFiles();
     
     // Update month picker handler
     $('#month-picker').on('change', function() {
@@ -278,7 +278,7 @@ $(document).ready(function() {
     $('#month-picker').val(currentMonth);
     
     // Load initial data with current month
-    loadUploadedFiles(currentMonth);
+    // loadUploadedFiles(currentMonth);
     loadDashboardCounts(currentMonth);
     
     // Update status counts when month changes
@@ -293,7 +293,6 @@ $(document).ready(function() {
     
     // Load initial dashboard data
     loadDashboardCounts();
-    loadMonthlyFiles();
     loadRecentFiles();
     
     // Setup month picker handler
@@ -320,7 +319,7 @@ $(document).ready(function() {
 // Load dashboard counts
 function loadDashboardCounts() {
     $.ajax({
-        url: `${API_URL}/dashboard/status-counts`,
+        url: `${API_URL}/status-counts.php`,
         method: 'GET',
         success: function(response) {
             if (response.success) {
@@ -335,7 +334,7 @@ function loadDashboardCounts() {
 // Load raw data
 function loadRawData() {
     $.ajax({
-        url: `${API_URL}/raw-data`,
+        url: `${API_URL}/raw-data.php`,
         type: 'GET',
         success: function(response) {
             if (response.success) {
@@ -365,7 +364,7 @@ function loadRawData() {
 
 // Load clean data
 function loadCleanData(status = '') {
-    let url = `${API_URL}/clean-data`;
+    let url = `${API_URL}/clean-data.php`;
     if (status) {
         url += '?status=' + status;
     }
@@ -402,7 +401,7 @@ function loadCleanData(status = '') {
 // Load applicants
 function loadApplicants() {
     $.ajax({
-        url: `${API_URL}/applicants`,
+        url: `${API_URL}/applicants.php`,
         type: 'GET',
         success: function(response) {
             if (response.success) {
@@ -468,7 +467,7 @@ function searchApplicants(term) {
 // Load plantilla options for applicant form
 function loadPlantillaOptions() {
     $.ajax({
-        url: `${API_URL}/clean-data`,
+        url: `${API_URL}/clean-data.php`,
         type: 'GET',
         success: function(response) {
             if (response.success) {
@@ -488,7 +487,7 @@ function loadPlantillaOptions() {
 // Edit record
 function editRecord(id) {
     $.ajax({
-        url: `${API_URL}/clean-data`,
+        url: `${API_URL}/clean-data.php`,
         type: 'GET',
         success: function(response) {
             if (response.success) {
@@ -559,7 +558,7 @@ function loadUploadedFiles(monthYear = null) {
     }
 
     $.ajax({
-        url: `${API_URL}/uploaded-files?month_year=${monthYear}`,
+        url: `${API_URL}/uploaded-files.php?month_year=${monthYear}`,
         type: 'GET',
         success: function(response) {
             if (response.success) {
@@ -1064,54 +1063,42 @@ function editFile(fileId) {
     });
 }
 
-// Add field-specific editors
-function showFieldEditor(cell, field) {
-    const currentValue = cell.text();
-    let editor;
+// // Add field-specific editors
+// function showFieldEditor(cell, field) {
+//     const currentValue = cell.text();
+//     let editor;
     
-    switch(field) {
-        case 'sex':
-            editor = $('<select>')
-                .append('<option value="Male">Male</option>')
-                .append('<option value="Female">Female</option>')
-                .append('<option value="Others">Others</option>');
-            break;
-        case 'appointment_status':
-            editor = $('<select>')
-                .append('<option value="Temporary">Temporary</option>')
-                .append('<option value="Permanent">Permanent</option>');
-            break;
-        case 'sg':
-            editor = $('<select>').append(
-                Array.from({length: 100}, (_, i) => 
-                    `<option value="${i+1}">SG ${i+1}</option>`
-                )
-            );
-            break;
-        // Add other field types...
-    }
+//     switch(field) {
+//         case 'sex':
+//             editor = $('<select>')
+//                 .append('<option value="Male">Male</option>')
+//                 .append('<option value="Female">Female</option>')
+//                 .append('<option value="Others">Others</option>');
+//             break;
+//         case 'appointment_status':
+//             editor = $('<select>')
+//                 .append('<option value="Temporary">Temporary</option>')
+//                 .append('<option value="Permanent">Permanent</option>');
+//             break;
+//         case 'sg':
+//             editor = $('<select>').append(
+//                 Array.from({length: 100}, (_, i) => 
+//                     `<option value="${i+1}">SG ${i+1}</option>`
+//                 )
+//             );
+//             break;
+//         // Add other field types...
+//     }
     
-    if (editor) {
-        editor.val(currentValue)
-            .addClass('field-editor')
-            .on('change', function() {
-                cell.text($(this).val());
-            });
-        cell.html(editor);
-    }
-}
-
-// Add file handling functions
-function openFile(fileId) {
-    // Navigate to data management
-    $('.nav-menu a[data-page="data-management"]').click();
-    
-    // Switch to raw data tab
-    $('.tab[data-tab="raw-data"]').click();
-    
-    // Load file content
-    loadFileContent(fileId);
-}
+//     if (editor) {
+//         editor.val(currentValue)
+//             .addClass('field-editor')
+//             .on('change', function() {
+//                 cell.text($(this).val());
+//             });
+//         cell.html(editor);
+//     }
+// }
 
 function loadFileContent(fileId) {
     $.ajax({
@@ -1170,17 +1157,17 @@ $('#file-search').on('keyup', function() {
     searchFiles(searchTerm);
 });
 
-function searchFiles(term) {
-    $.ajax({
-        url: `${API_URL}/files/search?term=${encodeURIComponent(term)}`,
-        method: 'GET',
-        success: function(response) {
-            if (response.success) {
-                updateFilesList(response.data);
-            }
-        }
-    });
-}
+// function searchFiles(term) {
+//     $.ajax({
+//         url: `${API_URL}/files/search?term=${encodeURIComponent(term)}`,
+//         method: 'GET',
+//         success: function(response) {
+//             if (response.success) {
+//                 updateFilesList(response.data);
+//             }
+//         }
+//     });
+// }
 
 // Load monthly files
 function loadMonthlyFiles(monthYear = null) {
@@ -1191,7 +1178,7 @@ function loadMonthlyFiles(monthYear = null) {
     }
 
     $.ajax({
-        url: `${API_URL}/uploaded-files?month_year=${monthYear}`,
+        url: `${API_URL}/uploaded-files.php?month_year=${monthYear}`,
         type: 'GET',
         success: function(response) {
             if (response.success) {
@@ -1226,7 +1213,7 @@ function updateMonthlyFilesList(files) {
 // Load and display recent files
 function loadRecentFiles() {
     $.ajax({
-        url: `${API_URL}/dashboard/recent-files`,
+        url: `${API_URL}/recent-files.php`,
         method: 'GET',
         success: function(response) {
             if (response.success) {
@@ -1415,18 +1402,6 @@ function getColumnType(header) {
     if (header === 'MONTHLYSALARY') return 'currency';
     if (header === 'VACATED DUE TO') return 'vacated_due_to';
     return 'text';
-}
-
-// Update showFilteredData to handle the status card clicks
-function showFilteredData(status) {
-    // Navigate to data management page
-    $('.nav-menu a[data-page="data-management"]').click();
-    
-    // Switch to clean data tab
-    $('.tab[data-tab="clean-data"]').click();
-    
-    // Set the status filter and load data
-    $('#status-filter').val(status).trigger('change');
 }
 
 // Update upload button handler
@@ -1755,7 +1730,6 @@ function showPage(pageId) {
     // Add active class to current page and nav item
     const currentPage = document.getElementById(pageId);
     const currentNav = document.querySelector(`.nav-menu a[href="#${pageId}"]`);
-    
     if (currentPage) {
         currentPage.classList.add('active');
     }
@@ -1768,39 +1742,39 @@ function showPage(pageId) {
 }
 
 // Restore active state on page load
-document.addEventListener('DOMContentLoaded', () => {
-    const activePage = localStorage.getItem('activePage') || 'dashboard';
-    showPage(activePage);
-});
+// document.addEventListener('DOMContentLoaded', () => {
+//     const activePage = localStorage.getItem('activePage') || 'dashboard';
+//     showPage(activePage);
+// });
 
-// Add this to handle initial page load and restore active state
-document.addEventListener('DOMContentLoaded', () => {
-    const currentPage = localStorage.getItem('currentPage') || 'dashboard';
-    showPage(currentPage);
-    history.replaceState(null, '', `#${currentPage}`);
-});
+// // Add this to handle initial page load and restore active state
+// document.addEventListener('DOMContentLoaded', () => {
+//     const currentPage = localStorage.getItem('currentPage') || 'dashboard';
+//     showPage(currentPage);
+//     history.replaceState(null, '', `#${currentPage}`);
+// });
 
-// Initialize navigation on page load
-document.addEventListener('DOMContentLoaded', () => {
-    // Handle navigation clicks
-    document.querySelectorAll('.nav-menu a').forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            const pageId = e.currentTarget.getAttribute('href').substring(1);
-            showPage(pageId);
-            history.pushState(null, '', `#${pageId}`);
-        });
-    });
+// // Initialize navigation on page load
+// document.addEventListener('DOMContentLoaded', () => {
+//     // Handle navigation clicks
+//     document.querySelectorAll('.nav-menu a').forEach(link => {
+//         link.addEventListener('click', (e) => {
+//             e.preventDefault();
+//             const pageId = e.currentTarget.getAttribute('href').substring(1);
+//             showPage(pageId);
+//             history.pushState(null, '', `#${pageId}`);
+//         });
+//     });
 
-    // Handle initial page load and browser back/forward
-    const handleNavigation = () => {
-        const hash = window.location.hash.substring(1) || 'dashboard';
-        showPage(hash);
-    };
+//     // Handle initial page load and browser back/forward
+//     const handleNavigation = () => {
+//         const hash = window.location.hash.substring(1) || 'dashboard';
+//         showPage(hash);
+//     };
 
-    window.addEventListener('popstate', handleNavigation);
-    handleNavigation(); // Handle initial page load
-});
+//     window.addEventListener('popstate', handleNavigation);
+//     handleNavigation(); // Handle initial page load
+// });
 
 // Initialize page-specific content functions
 function initializeDataManagement() {
@@ -1812,9 +1786,3 @@ function initializeDataManagement() {
 function loadApplicantRecords() {
     // Load applicant records content
 }
-
-function loadAdminPanel() {
-    // Load admin panel content
-}
-
-// ...rest of existing code...

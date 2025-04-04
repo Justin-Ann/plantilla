@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Add filter event handlers
-    document.getElementById('apply-filters').addEventListener('click', loadApplicantRecords);
+    // document.getElementById('apply-filters').addEventListener('click', loadApplicantRecords);
 
     // Initial load without filters
     loadApplicantRecords();

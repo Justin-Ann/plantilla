@@ -12,7 +12,7 @@ $endpoints = [
 $results = [];
 
 foreach ($endpoints as $name => $path) {
-    $url = 'http://' . $_SERVER['HTTP_HOST'] . '/HRIS' . $path;
+    $url = 'http://' . $_SERVER['HTTP_HOST'] . '/plantilla' . $path;
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_NOBODY, true);

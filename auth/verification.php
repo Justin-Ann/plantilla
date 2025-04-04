@@ -23,7 +23,7 @@ function sendVerificationEmail($email, $token) {
         $mail->addAddress($email);
         
         // Content
-        $verification_link = "http://".$_SERVER['HTTP_HOST']."/HRIS/auth/verify.php?token=".$token;
+        $verification_link = "http://".$_SERVER['HTTP_HOST']."/plantilla/auth/verify.php?token=".$token;
         
         $mail->isHTML(true);
         $mail->Subject = "Verify your email - PAGASA Plantilla System";

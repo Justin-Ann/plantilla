@@ -8,9 +8,9 @@ define('DB_NAME', 'plantilla_management');
 // Email configuration
 define('SMTP_HOST', 'smtp.gmail.com');
 define('SMTP_PORT', 587);
-define('SMTP_USER', 'your-email@gmail.com'); // Replace with your Gmail
-define('SMTP_PASS', 'your-app-password');    // Replace with Gmail App Password
-define('SMTP_FROM', 'your-email@gmail.com'); // Replace with your Gmail
+define('SMTP_USER', 'francistengteng10@gmail.com'); // Replace with your Gmail
+define('SMTP_PASS', 'biic qznn xrah kxer');    // Replace with Gmail App Password
+define('SMTP_FROM', 'francistengteng10@gmail.com'); // Replace with your Gmail
 define('SMTP_FROM_NAME', 'PAGASA HRIS');
 
 // Enable error logging

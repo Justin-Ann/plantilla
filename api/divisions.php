@@ -14,45 +14,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-switch($_GET['action'] ?? '') {
+switch ($_GET['action'] ?? 'get_divisions') {
     case 'get_data':
         $division = $_GET['division'] ?? null;
         $month = $_GET['month'] ?? null;
-        
-        if(!$division) {
+
+        if (!$division) {
             echo json_encode(['success' => false, 'message' => 'Division code required']);
             exit;
         }
 
         $sql = "SELECT * FROM raw_data WHERE plantilla_division_definition = ?";
-        if($month) {
+        if ($month) {
             $sql .= " AND DATE_FORMAT(upload_date, '%Y-%m') = ?";
         }
 
         $stmt = $conn->prepare($sql);
-        
-        if($month) {
+
+        if ($month) {
             $stmt->bind_param('ss', $division, $month);
         } else {
             $stmt->bind_param('s', $division);
         }
-        
+
         $stmt->execute();
         $result = $stmt->get_result();
         $data = $result->fetch_all(MYSQLI_ASSOC);
-        
+
         echo json_encode(['success' => true, 'data' => $data]);
         break;
-        
+
     case 'get_divisions':
         try {
             $query = "SELECT id, code, name FROM divisions ORDER BY code";
             $result = $conn->query($query);
-            
+
             if (!$result) {
                 throw new Exception($conn->error);
             }
-            
+
             $divisions = [];
             while ($row = $result->fetch_assoc()) {
                 $divisions[] = [
@@ -61,12 +61,11 @@ switch($_GET['action'] ?? '') {
                     'name' => $row['name']
                 ];
             }
-            
+
             echo json_encode([
                 'success' => true,
                 'divisions' => $divisions
             ]);
-            
         } catch (Exception $e) {
             error_log("Divisions API error: " . $e->getMessage());
             http_response_code(500);
@@ -76,7 +75,4 @@ switch($_GET['action'] ?? '') {
             ]);
         }
         break;
-        
-    // ... other actions
 }
-?>

@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function loadStatusCounts() {
-    fetch('api/dashboard_handler.php?action=status-counts')
+    fetch('../api/dashboard_handler.php?action=status-counts')
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -69,11 +69,11 @@ function loadStatusCounts() {
 }
 
 function loadMonthlyFiles(month) {
-    fetch(`api/dashboard_handler.php?action=monthly-files&month=${month || ''}`)
+    fetch(`../api/dashboard_handler.php?action=monthly-files&month=${month || ''}`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                const container = document.getElementById('monthly-files');
+                const container = document.getElementById('monthly-files-list');
                 container.innerHTML = data.files.map(file => `
                     <div class="file-item">
                         <span>${file.filename}</span>
@@ -84,23 +84,23 @@ function loadMonthlyFiles(month) {
                     </div>
                 `).join('');
             } else {
-                const container = document.getElementById('monthly-files');
+                const container = document.getElementById('monthly-files-list');
                 container.innerHTML = `<div class="error-message">Failed to load monthly files. Please try again.</div>`;
             }
         })
         .catch(error => {
             console.error('Error loading monthly files:', error);
-            const container = document.getElementById('monthly-files');
+            const container = document.getElementById('monthly-files-list');
             container.innerHTML = `<div class="error-message">Failed to load monthly files. Please try again.</div>`;
         });
 }
 
 function loadRecentFiles() {
-    fetch('api/dashboard_handler.php?action=recent-files')
+    fetch('../api/dashboard_handler.php?action=recent-files')
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                const recentList = document.getElementById('recent-files');
+                const recentList = document.getElementById('recent-files-list');
                 recentList.innerHTML = data.files.map(file => `
                     <div class="recent-file" onclick="openFile(${file.id})">
                         <div class="file-name">${file.filename}</div>
@@ -111,13 +111,13 @@ function loadRecentFiles() {
                     </div>
                 `).join('') || '<div class="no-files">No recent files found</div>';
             } else {
-                const recentList = document.getElementById('recent-files');
+                const recentList = document.getElementById('recent-files-list');
                 recentList.innerHTML = '<div class="error-message">Failed to load recent files. Please try again.</div>';
             }
         })
         .catch(error => {
             console.error('Error loading recent files:', error);
-            const recentList = document.getElementById('recent-files');
+            const recentList = document.getElementById('recent-files-list');
             recentList.innerHTML = '<div class="error-message">Failed to load recent files. Please try again.</div>';
         });
 }

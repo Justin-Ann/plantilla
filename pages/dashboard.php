@@ -1,19 +1,19 @@
-<?php require_once '../auth/auth.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Dashboard - PAGASA Plantilla System</title>
     <link rel="stylesheet" href="../css/styles.css">
 </head>
+
 <body>
     <div class="container">
         <?php include '../sidebar.php'; ?>
-        
+
         <div class="main-content">
             <h2>Dashboard Overview</h2>
-            
-            <!-- Status Cards -->
+
             <div class="status-counts">
                 <div class="card status-card" data-status="On-process" id="on-process">
                     <h3>On Process</h3>
@@ -70,4 +70,5 @@
 
     <script src="../js/dashboard.js"></script>
 </body>
+
 </html>

@@ -9,7 +9,6 @@ if(empty($_GET['token'])) {
 $token = trim($_GET['token']);
 $message = "";
 
-try {
     $sql = "SELECT id, email_verified FROM users WHERE verification_token = ? AND verification_expires > NOW()";
     if($stmt = mysqli_prepare($conn, $sql)) {
         mysqli_stmt_bind_param($stmt, "s", $token);
@@ -38,9 +37,7 @@ try {
             }
         }
     }
-} catch(Exception $e) {
-    $message = "Error occurred during verification.";
-}
+
 ?>
 
 <!DOCTYPE html>

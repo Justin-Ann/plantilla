@@ -33,7 +33,7 @@ function send_verification_email($to_email, $verification_url) {
 
         $mail->send();
         return true;
-    } catch (PHPMailer\PHPMailer\Exception $e) {
+    } catch (Exception $e) {
         error_log("Email sending failed: {$mail->ErrorInfo}");
         return false;
     }

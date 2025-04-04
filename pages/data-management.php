@@ -1,6 +1,6 @@
-<?php require_once '../auth/auth.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Data Management - PAGASA Plantilla System</title>
@@ -8,60 +8,56 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+
 <body>
     <div class="container">
         <?php include '../sidebar.php'; ?>
-        
+
         <div class="main-content">
             <div class="tabs">
                 <div class="tab active" data-tab="divisions">Office and Organizational Code</div>
                 <div class="tab" data-tab="spreadsheet">Spreadsheet</div>
             </div>
-
-            <!-- Divisions Tab -->
             <div id="divisions-content" class="tab-content active">
                 <div class="division-filter">
                     <input type="month" id="month-picker" name="month-picker" title="Select month">
-                    <input type="text" id="division-search" name="division-search" 
-                           placeholder="Search divisions..." 
-                           title="Search divisions">
+                    <input type="text" id="division-search" name="division-search"
+                        placeholder="Search divisions..."
+                        title="Search divisions">
                 </div>
-                <div class="division-list" role="list">
+                <div class="divisions-list" role="list">
                     <?php
                     $divisions = [
                         'Office of the Administrator' => 1,
                         'Administrative Division' => 2,
-                        // ... add all 43 divisions
                     ];
-                    
-                    foreach($divisions as $name => $code): ?>
-                    <div class="division-item" data-code="<?= $code ?>" role="listitem">
-                        <div class="division-header">
-                            <span class="division-code" role="text"><?= $code ?></span>
-                            <span class="division-name" role="text"><?= $name ?></span>
-                        </div>
-                        <div class="division-actions">
-                            <button class="view-data-btn" 
+
+                    foreach ($divisions as $name => $code): ?>
+                        <div class="division-item" data-code="<?= $code ?>" role="listitem">
+                            <div class="division-header">
+                                <span class="division-code" role="text"><?= $code ?></span>
+                                <span class="division-name" role="text"><?= $name ?></span>
+                            </div>
+                            <div class="division-actions">
+                                <button class="view-data-btn"
                                     title="View data for <?= $name ?>"
                                     aria-label="View data for <?= $name ?>">
-                                View Data
-                            </button>
-                            <button class="open-files-btn"
+                                    View Data
+                                </button>
+                                <button class="open-files-btn"
                                     title="Open files for <?= $name ?>"
                                     aria-label="Open files for <?= $name ?>">
-                                Open Files
-                            </button>
+                                    Open Files
+                                </button>
+                            </div>
                         </div>
-                    </div>
                     <?php endforeach; ?>
                 </div>
             </div>
-
-            <!-- Spreadsheet Tab -->
             <div id="spreadsheet-content" class="tab-content">
                 <div class="spreadsheet-toolbar" role="toolbar" aria-label="Spreadsheet controls">
-                    <select id="division-filter" name="division-filter" 
-                            title="Filter by division" aria-label="Filter by division">
+                    <select id="division-filter" name="division-filter"
+                        title="Filter by division" aria-label="Filter by division">
                         <option value="">All Divisions</option>
                     </select>
                     <button id="save-changes" title="Save changes" aria-label="Save changes">
@@ -77,23 +73,18 @@
                     <table role="presentation">
                         <thead role="rowgroup">
                             <tr role="row">
-                                <!-- Headers will be populated by JavaScript -->
                             </tr>
                         </thead>
                         <tbody role="rowgroup">
-                            <!-- Content will be populated by JavaScript -->
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Applicant Records Section -->
     <div class="applicant-records-container">
         <div class="applicant-header">
             <h2>Applicant Records</h2>
-            <!-- Add filter controls -->
             <div class="filter-controls">
                 <select id="month-filter">
                     <option value="">Select Month</option>
@@ -106,12 +97,10 @@
                 </select>
                 <select id="division-filter">
                     <option value="">Select Division</option>
-                    <!-- Will be populated via JavaScript -->
                 </select>
                 <button id="apply-filters" class="btn btn-primary">Apply Filters</button>
             </div>
         </div>
-
         <div class="data-table">
             <table id="applicants-table">
                 <thead>
@@ -141,13 +130,10 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- Will be populated via JavaScript -->
                 </tbody>
             </table>
         </div>
     </div>
-
-    <!-- Applicant Modal -->
     <div id="applicant-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -182,6 +168,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.js"></script>
     <script src="../js/data-management.js"></script>
-    <script src="../js/applicant-records.js"></script>
 </body>
+
 </html>

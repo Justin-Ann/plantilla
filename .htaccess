@@ -35,6 +35,11 @@
 AddDefaultCharset utf-8
 
 RewriteEngine On
+
+# Explicit route for the uploaded-files API
+RewriteRule ^api/uploaded-files$ api/uploaded.php [QSA,L]
+
+# Generic fallback to route anything else inside the /api folder
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^api/(.*)$ api/$1 [QSA,L]

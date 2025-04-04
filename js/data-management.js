@@ -47,7 +47,7 @@ class DataManagement {
 
     async loadDivisions() {
         try {
-            const response = await fetch('http://localhost/HRIS/api/divisions.php');
+            const response = await fetch('http://localhost/plantilla/api/divisions.php');
             const data = await response.json();
             if (data.success) {
                 this.renderDivisions(data.divisions);

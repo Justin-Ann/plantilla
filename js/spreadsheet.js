@@ -34,7 +34,6 @@ class ExcelLikeSpreadsheet {
             manualColumnResize: true,
             manualRowResize: true,
             fillHandle: true,
-            // Additional Handsontable configuration
             cells(row, col) {
                 const cellProperties = {};
                 if (col === 'monthly_salary') {
