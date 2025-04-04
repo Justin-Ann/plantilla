@@ -1,29 +1,46 @@
 <?php
 require_once "../config.php";
+require '../vendor/autoload.php'; // Add PHPMailer
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
 
 function sendVerificationEmail($email, $token) {
-    $subject = "Verify your email - Plantilla Management System";
-    $verification_link = "http://".$_SERVER['HTTP_HOST']."/HRIS/auth/verify.php?token=".$token;
-    
-    $message = "
-    <html>
-    <head>
-        <title>Email Verification</title>
-    </head>
-    <body>
-        <h2>Email Verification</h2>
-        <p>Thank you for registering. Please click the link below to verify your email:</p>
-        <p><a href='$verification_link'>$verification_link</a></p>
-        <p>This link will expire in 24 hours.</p>
-    </body>
-    </html>
-    ";
-    
-    $headers = "MIME-Version: 1.0" . "\r\n";
-    $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
-    $headers .= 'From: PAGASA HRIS <noreply@pagasa.gov.ph>' . "\r\n";
-    
-    return mail($email, $subject, $message, $headers);
+    try {
+        $mail = new PHPMailer(true);
+        
+        // Server settings
+        $mail->isSMTP();
+        $mail->Host = SMTP_HOST;
+        $mail->SMTPAuth = true;
+        $mail->Username = SMTP_USER;
+        $mail->Password = SMTP_PASS;
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Port = SMTP_PORT;
+        
+        // Recipients
+        $mail->setFrom(SMTP_FROM, SMTP_FROM_NAME);
+        $mail->addAddress($email);
+        
+        // Content
+        $verification_link = "http://".$_SERVER['HTTP_HOST']."/HRIS/auth/verify.php?token=".$token;
+        
+        $mail->isHTML(true);
+        $mail->Subject = "Verify your email - PAGASA Plantilla System";
+        $mail->Body = "
+            <h2>Email Verification - PAGASA Plantilla System</h2>
+            <p>Thank you for registering. Please click the link below to verify your email:</p>
+            <p><a href='$verification_link'>$verification_link</a></p>
+            <p>This link will expire in 24 hours.</p>
+            <p>If you did not register for this account, please ignore this email.</p>
+        ";
+
+        $mail->send();
+        return true;
+    } catch (Exception $e) {
+        error_log("Email sending failed: " . $mail->ErrorInfo);
+        return false;
+    }
 }
 
 function verifyToken($token) {

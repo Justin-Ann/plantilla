@@ -42,7 +42,7 @@ $(document).ready(function() {
 
 function refreshDashboardStats() {
     $.ajax({
-        url: '/HRIS/api/admin.php?action=get_stats',
+        url: '/admin/get-stats',
         method: 'GET',
         success: function(response) {
             if (response.success) {
@@ -51,9 +51,6 @@ function refreshDashboardStats() {
                     $(this).text(response.stats[key] || 0);
                 });
             }
-        },
-        error: function(xhr, status, error) {
-            console.error('Error fetching stats:', error);
         }
     });
 }

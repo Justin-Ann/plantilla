@@ -1,77 +1,73 @@
 <?php
-require_once 'config.php';
-header('Content-Type: application/json');
-error_reporting(0);
+require_once '../config.php';
+require_once '../auth/auth.php';
 
-$action = $_GET['action'] ?? 'list';
+// Proper CORS and content headers
+header('Access-Control-Allow-Origin: ' . $_SERVER['HTTP_ORIGIN']);
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Credentials: true');
+header('Content-Type: application/json; charset=utf-8');
 
-switch($action) {
-    case 'list':
-        try {
-            $month = isset($_GET['month']) ? $mysqli->real_escape_string($_GET['month']) : null;
-            
-            $query = "SELECT * FROM monthly_files";
-            if ($month) {
-                $query .= " WHERE DATE_FORMAT(upload_date, '%Y-%m') = '$month'";
-            }
-            $query .= " ORDER BY upload_date DESC";
-            
-            $result = $mysqli->query($query);
-            if (!$result) {
-                throw new Exception($mysqli->error);
-            }
-            
-            $files = [];
-            while($row = $result->fetch_assoc()) {
-                $files[] = [
-                    'id' => $row['id'],
-                    'filename' => $row['filename'],
-                    'upload_date' => $row['upload_date'],
-                    'last_edited' => $row['last_edited'],
-                    'editor_name' => $row['editor_name']
-                ];
-            }
-            
-            echo json_encode(['success' => true, 'data' => $files]);
-            
-        } catch (Exception $e) {
-            http_response_code(500);
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
-        }
-        break;
+// Modern cache control
+header('Cache-Control: no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
 
-    case 'upload':
-        try {
-            $month = $_POST['month'] ?? date('Y-m');
-            $uploadedFile = $_FILES['file'] ?? null;
+// Handle preflight requests
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
 
-            if (!$uploadedFile) {
-                throw new Exception('No file uploaded');
-            }
+try {
+    $month = isset($_GET['month']) ? $_GET['month'] : date('Y-m');
 
-            $filename = $mysqli->real_escape_string($uploadedFile['name']);
-            $uploadDir = '../uploads/monthly/';
-            $filePath = $uploadDir . basename($filename);
-
-            if (!move_uploaded_file($uploadedFile['tmp_name'], $filePath)) {
-                throw new Exception('Failed to upload file');
-            }
-
-            $query = "INSERT INTO monthly_files (filename, file_path, upload_date, month_year) 
-                     VALUES (?, ?, NOW(), ?)";
-            $stmt = $mysqli->prepare($query);
-            $stmt->bind_param('sss', $filename, $filePath, $month);
-            
-            if (!$stmt->execute()) {
-                throw new Exception($stmt->error);
-            }
-
-            echo json_encode(['success' => true, 'message' => 'File uploaded successfully']);
-
-        } catch (Exception $e) {
-            http_response_code(500);
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
-        }
-        break;
+    $query = "SELECT f.*, u.full_name as uploaded_by, 
+              (SELECT COUNT(*) FROM file_history WHERE file_id = f.id) as edit_count,
+              (SELECT users.full_name 
+               FROM file_history fh 
+               JOIN users ON users.id = fh.user_id 
+               WHERE fh.file_id = f.id 
+               ORDER BY fh.timestamp DESC LIMIT 1) as last_editor
+              FROM uploaded_files f
+              LEFT JOIN users u ON f.user_id = u.id
+              WHERE DATE_FORMAT(f.upload_date, '%Y-%m') = ?
+              ORDER BY f.upload_date DESC";
+              
+    $stmt = $conn->prepare($query);
+    if (!$stmt) {
+        throw new Exception("Prepare failed: " . $conn->error);
+    }
+    
+    $stmt->bind_param("s", $month);
+    if (!$stmt->execute()) {
+        throw new Exception("Execute failed: " . $stmt->error);
+    }
+    
+    $result = $stmt->get_result();
+    $files = [];
+    
+    while($row = $result->fetch_assoc()) {
+        $files[] = [
+            'id' => $row['id'],
+            'filename' => $row['filename'],
+            'upload_date' => $row['upload_date'],
+            'uploaded_by' => $row['uploaded_by'],
+            'edit_count' => $row['edit_count'],
+            'last_editor' => $row['last_editor']
+        ];
+    }
+    
+    echo json_encode([
+        'success' => true,
+        'files' => $files
+    ]);
+} catch(Exception $e) {
+    error_log("Monthly files error: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Error fetching monthly files: ' . $e->getMessage()
+    ]);
 }
 ?>

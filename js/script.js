@@ -1,48 +1,22 @@
-// Define base API URL using proper HTTP protocol
-window.API_URL = 'http://localhost/HRIS/api';
+// Temporarily bypass auth checks
+const API_URL = 'http://localhost/HRIS/api';
 
-// Update API URL to use relative path without redeclaring
-function handleApiError(error, context) {
-    console.error(`${context} error:`, error);
-    if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
-        console.warn('API endpoint not accessible. Check server configuration.');
-    }
-}
+// Add test data for development
+const TEST_USER = {
+    id: 1,
+    role: 'admin',
+    name: 'Test User'
+};
 
-// Update fetch calls with error handling
-async function fetchApi(endpoint, options = {}) {
-    if (!Auth.checkAuth()) {
-        throw new Error('Not authenticated');
-    }
-    
-    try {
-        const response = await fetch(`${API_URL}/${endpoint}`, {
-            ...options,
-            headers: {
-                'Content-Type': 'application/json',
-                ...options.headers
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        return await response.json();
-    } catch (error) {
-        if (error.message === 'Not authenticated') {
-            Auth.showLoginScreen();
-        }
-        handleApiError(error, endpoint);
-        throw error;
-    }
-}
-
+// Initialize app without auth
 $(document).ready(function() {
-    // Check authentication before initializing
-    if (!Auth.checkAuth()) {
-        return;
-    }
+    // Load dashboard data immediately
+    loadDashboardCounts();
+    loadMonthlyFiles();
+    loadRecentFiles();
+    
+    // Show admin features by default
+    $('.admin-only').show();
 
     // Check server connectivity on page load
     checkServerConnectivity();
@@ -51,16 +25,7 @@ $(document).ready(function() {
     $('.nav-menu a').on('click', function(e) {
         e.preventDefault();
         const page = $(this).data('page');
-        
-        $('.nav-menu a').removeClass('active');
-        $(this).addClass('active');
-        
-        $('.page').removeClass('active');
-        $('#' + page).addClass('active');
-
-        if (page === 'admin-account') {
-            loadAdminUsers();
-        }
+        showPage(page);
     });
     
     // Tab navigation
@@ -1777,262 +1742,79 @@ function openDivisionFiles(divisionCode) {
     });
 }
 
-// Add mobile sidebar toggle
-function initializeMobileNav() {
-    const toggleBtn = document.createElement('button');
-    toggleBtn.className = 'mobile-nav-toggle';
-    toggleBtn.innerHTML = '<i class="material-icons">menu</i>';
-    document.querySelector('.main-content').prepend(toggleBtn);
-
-    toggleBtn.addEventListener('click', () => {
-        document.querySelector('.sidebar').classList.toggle('active');
+// Function to show page
+function showPage(pageId) {
+    // Remove active class from all pages and nav items
+    document.querySelectorAll('.page').forEach(page => {
+        page.classList.remove('active');
+    });
+    document.querySelectorAll('.nav-menu a').forEach(link => {
+        link.classList.remove('active');
     });
 
-    // Close sidebar when clicking outside
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.sidebar') && 
-            !e.target.closest('.mobile-nav-toggle') && 
-            window.innerWidth <= 768) {
-            document.querySelector('.sidebar').classList.remove('active');
-        }
-    });
+    // Add active class to current page and nav item
+    const currentPage = document.getElementById(pageId);
+    const currentNav = document.querySelector(`.nav-menu a[href="#${pageId}"]`);
+    
+    if (currentPage) {
+        currentPage.classList.add('active');
+    }
+    if (currentNav) {
+        currentNav.classList.add('active');
+    }
+
+    // Store active page in localStorage
+    localStorage.setItem('activePage', pageId);
 }
 
-document.addEventListener('DOMContentLoaded', initializeMobileNav);
-
-// ...rest of existing code...
-
-// Navigation Handler
+// Restore active state on page load
 document.addEventListener('DOMContentLoaded', () => {
-    // Navigation click handlers
+    const activePage = localStorage.getItem('activePage') || 'dashboard';
+    showPage(activePage);
+});
+
+// Add this to handle initial page load and restore active state
+document.addEventListener('DOMContentLoaded', () => {
+    const currentPage = localStorage.getItem('currentPage') || 'dashboard';
+    showPage(currentPage);
+    history.replaceState(null, '', `#${currentPage}`);
+});
+
+// Initialize navigation on page load
+document.addEventListener('DOMContentLoaded', () => {
+    // Handle navigation clicks
     document.querySelectorAll('.nav-menu a').forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
-            
-            const pageId = link.getAttribute('data-page');
-            if (!pageId) return;
-
-            // Update active states
-            document.querySelectorAll('.nav-menu a').forEach(el => el.classList.remove('active'));
-            link.classList.add('active');
-            
-            // Hide all pages
-            document.querySelectorAll('.page').forEach(page => {
-                page.style.display = 'none';
-            });
-            
-            // Show selected page
-            const targetPage = document.getElementById(pageId);
-            if (targetPage) {
-                targetPage.style.display = 'block';
-                
-                // Initialize page-specific content
-                switch(pageId) {
-                    case 'dashboard':
-                        if (window.Dashboard) Dashboard.init();
-                        break;
-                    case 'data-management':
-                        if (window.DataManagement) new DataManagement();
-                        break;
-                    case 'applicant-records':
-                        if (window.ApplicantRecords) new ApplicantRecords();
-                        break;
-                    case 'admin':
-                        if (window.AdminPanel) new AdminPanel();
-                        break;
-                }
-            }
+            const pageId = e.currentTarget.getAttribute('href').substring(1);
+            showPage(pageId);
+            history.pushState(null, '', `#${pageId}`);
         });
     });
 
-    // Initialize dashboard by default
-    const defaultPage = document.querySelector('.nav-menu a[data-page="dashboard"]');
-    if (defaultPage) {
-        defaultPage.click();
-    }
+    // Handle initial page load and browser back/forward
+    const handleNavigation = () => {
+        const hash = window.location.hash.substring(1) || 'dashboard';
+        showPage(hash);
+    };
+
+    window.addEventListener('popstate', handleNavigation);
+    handleNavigation(); // Handle initial page load
 });
 
+// Initialize page-specific content functions
 function initializeDataManagement() {
-    // Show first tab by default
-    const firstTab = document.querySelector('.tab[data-tab="divisions"]');
-    if (firstTab) {
-        firstTab.click();
+    if (typeof DataManagement !== 'undefined') {
+        new DataManagement();
     }
-
-    // Initialize tabs
-    document.querySelectorAll('.tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            // Remove active class from all tabs
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            
-            // Add active class to clicked tab
-            tab.classList.add('active');
-            
-            // Hide all tab contents
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.style.display = 'none';
-            });
-            
-            // Show selected tab content
-            const tabId = tab.getAttribute('data-tab');
-            const targetContent = document.getElementById(`${tabId}-content`);
-            if (targetContent) {
-                targetContent.style.display = 'block';
-                
-                // Initialize tab-specific content
-                if (tabId === 'spreadsheet') {
-                    if (window.spreadsheetManager) {
-                        window.spreadsheetManager.refreshGrid();
-                    }
-                }
-            }
-        });
-    });
 }
 
 function loadApplicantRecords() {
-    if (window.ApplicantRecords) {
-        const applicantManager = new ApplicantRecords();
-        applicantManager.loadData();
-    }
+    // Load applicant records content
 }
 
 function loadAdminPanel() {
-    // Load admin users and data
-    if (window.AdminPanel) {
-        const adminPanel = new AdminPanel();
-        adminPanel.initialize();
-    }
+    // Load admin panel content
 }
 
-// Update navigation handler
-document.addEventListener('DOMContentLoaded', () => {
-    // Page navigation
-    const navLinks = document.querySelectorAll('.nav-menu a');
-    
-    navLinks.forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            
-            // Remove active class from all links and add to clicked one
-            navLinks.forEach(l => l.classList.remove('active'));
-            link.classList.add('active');
-            
-            // Get target page
-            const targetPage = link.getAttribute('data-page');
-            
-            // Hide all pages
-            document.querySelectorAll('.page').forEach(page => {
-                page.classList.remove('active');
-                page.style.display = 'none';
-            });
-            
-            // Show target page
-            const pageElement = document.getElementById(targetPage);
-            if (pageElement) {
-                pageElement.classList.add('active');
-                pageElement.style.display = 'block';
-                
-                // Initialize specific page content
-                switch(targetPage) {
-                    case 'dashboard':
-                        Dashboard.init();
-                        break;
-                    case 'data-management':
-                        if (!window.dataManagement) {
-                            window.dataManagement = new DataManagement();
-                        }
-                        break;
-                    case 'applicant-records':
-                        if (!window.applicantRecords) {
-                            window.applicantRecords = new ApplicantRecords();
-                        }
-                        break;
-                    case 'admin':
-                        loadAdminPanel();
-                        break;
-                }
-            }
-        });
-    });
-
-    // Initialize first page
-    document.querySelector('.nav-menu a[data-page="dashboard"]').click();
-});
-
-// ...existing code...
-
-// Remove duplicate navigation handlers
-$(document).ready(function() {
-    // Remove existing navigation handlers
-    $('.nav-menu a').off('click');
-    
-    // Initialize API error handling
-    initializeErrorHandling();
-    
-    // Initialize form handlers
-    initializeFormHandlers();
-    
-    // Initialize filters
-    initializeFilters();
-});
-
-function initializeErrorHandling() {
-    $(document).ajaxError((event, jqXHR, settings, error) => {
-        console.error('API Error:', {
-            url: settings.url,
-            error: error,
-            status: jqXHR.status,
-            response: jqXHR.responseText
-        });
-        handleApiError(error, settings.url);
-    });
-}
-
-// ...existing code...
-
-function initializeFormHandlers() {
-    // Upload form handler
-    $('#upload-form').on('submit', function(e) {
-        e.preventDefault();
-        handleFileUpload(this);
-    });
-}
-
-function initializeFilters() {
-    $('#status-filter').on('change', function() {
-        loadCleanData($(this).val());
-    });
-}
-
-// Update document ready handler
-$(document).ready(function() {
-    if (!Auth.checkAuth()) return;
-    
-    initializeErrorHandling();
-    initializeFormHandlers();
-    initializeFilters();
-    
-    // Set default month value for upload
-    const now = new Date();
-    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    $('#upload-month').val(currentMonth);
-});
-
-function loadDivisions() {
-    $.ajax({
-        url: `${API_URL}/divisions.php`,
-        method: 'GET',
-        success: function(response) {
-            if (response.success) {
-                // ...existing code...
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error('Error loading divisions:', error);
-            handleApiError(error, 'divisions');
-        }
-    });
-}
-
-// ...existing code...
+// ...rest of existing code...

@@ -1,15 +1,23 @@
 <?php
 // Database configuration
 define('DB_SERVER', 'localhost');
-define('DB_USERNAME', 'root'); // your database username
-define('DB_PASSWORD', ''); // your database password
+define('DB_USERNAME', 'root');  // Changed to default XAMPP username
+define('DB_PASSWORD', '');      // Changed to empty password for default XAMPP setup
 define('DB_NAME', 'plantilla_management');
 
 // Email configuration
 define('SMTP_HOST', 'smtp.gmail.com');
 define('SMTP_PORT', 587);
-define('SMTP_USER', 'your-email@gmail.com');
-define('SMTP_PASS', 'your-app-password');
+define('SMTP_USER', 'your-email@gmail.com'); // Replace with your Gmail
+define('SMTP_PASS', 'your-app-password');    // Replace with Gmail App Password
+define('SMTP_FROM', 'your-email@gmail.com'); // Replace with your Gmail
+define('SMTP_FROM_NAME', 'PAGASA HRIS');
+
+// Enable error logging
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+ini_set('log_errors', 1);
+ini_set('error_log', __DIR__ . '/logs/php-error.log');
 
 // System configuration
 define('VERIFY_EMAIL_EXPIRY', 24); // hours
@@ -18,13 +26,15 @@ define('UPLOAD_PATH', __DIR__ . '/uploads');
 
 // Create database connection
 try {
-    $conn = mysqli_connect(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME);
-    if($conn === false) {
-        throw new Exception("ERROR: Could not connect. " . mysqli_connect_error());
+    $conn = new mysqli(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME);
+    if($conn->connect_error) {
+        throw new Exception("ERROR: Could not connect. " . $conn->connect_error);
     }
 } catch(Exception $e) {
     error_log($e->getMessage());
-    exit("Database connection failed. Please check the configuration.");
+    header('Content-Type: application/json');
+    echo json_encode(['success' => false, 'message' => 'Database connection failed']);
+    exit();
 }
 
 // Create uploads directory if it doesn't exist

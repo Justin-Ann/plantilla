@@ -3,282 +3,317 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plantilla Management System</title>
+    <title>PAGASA Plantilla Information System</title>
     <link rel="stylesheet" href="css/styles.css">
-    <!-- Remove external font loading -->
-    <link href="https://cdn.jsdelivr.net/npm/handsontable@latest/dist/handsontable.full.min.css" rel="stylesheet">
+    <!-- Add Handsontable CSS and JS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.js"></script>
+    <!-- Add Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <!-- Login Screen - Remove style="display: none;" to show by default -->
-    <div id="login-screen">
-        <div class="cloud"></div>
-        <div class="cloud-1"></div>
-        <div class="cloud-2"></div>
-        <div class="cloud-3"></div>
-        <div class="cloud-4"></div>
-        <div class="login-container">
-            <img src="img/dost-pagasa-logo.png" alt="DOST-PAGASA Logo">
-            <h2 id="auth-title">Welcome Back</h2>
-            
-            <!-- Login Form -->
-            <form id="login-form">
-                <div class="input-group">
-                    <input type="email" id="login-email" placeholder="Email Address" required>
-                </div>
-                <div class="input-group">
-                    <input type="password" id="login-password" placeholder="Password" required>
-                </div>
-                <button type="submit">Log in</button>
-                <p>Don't have an account? <a href="#" id="show-register">Create Account</a></p>
-            </form>
-
-            <!-- Register Form -->
-            <form id="register-form" style="display: none;">
-                <div class="input-group">
-                    <input type="text" id="register-name" placeholder="Full Name" required>
-                </div>
-                <div class="input-group">
-                    <input type="email" id="register-email" placeholder="Email Address" required>
-                </div>
-                <div class="input-group">
-                    <input type="password" id="register-password" placeholder="Password" required>
-                </div>
-                <button type="submit">Create Account</button>
-                <p>Already have an account? <a href="#" id="show-login">Log in</a></p>
-            </form>
-        </div>
-    </div>
-
-    <!-- Main Content - Add style="display: none;" to hide by default -->
-    <div class="container" id="main-content" style="display: none;">
-        <aside class="sidebar">
-            <div class="inner-content">
-                <div class="logo">
-                    <img src="img/dost-pagasa-logo.png" alt="DOST-PAGASA Logo" width="150" height="150" loading="eager">
-                </div>
-                <ul class="nav-menu">
-                    <li><a href="#" data-page="dashboard" class="active"><i class="material-icons">dashboard</i> DASHBOARD</a></li>
-                    <li><a href="#" data-page="data-management"><i class="material-icons">folder</i> DATA MANAGEMENT</a></li>
-                    <li><a href="#" data-page="applicant-records"><i class="material-icons">people</i> APPLICANTS RECORDS</a></li>
-                    <li class="admin-only"><a href="#" data-page="admin"><i class="material-icons">admin_panel_settings</i> ADMIN</a></li>
-                    <li class="logout"><a href="#" id="logout-btn"><i class="material-icons">logout</i> LOGOUT</a></li>
-                </ul>
+    <div class="container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="logo">
+                <img src="css/img/dost-pagasa-logo.png" alt="PAGASA Logo">
+                <h2>Plantilla System</h2>
             </div>
-        </aside>
+            <ul class="nav-menu">
+                <li>
+                    <a href="#dashboard" data-page="dashboard">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#data-management" data-page="data-management">
+                        <i class="fas fa-table"></i>
+                        <span>Data Management</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#applicant-records" data-page="applicant-records">
+                        <i class="fas fa-users"></i>
+                        <span>Applicant Records</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#admin" data-page="admin" class="admin-only">
+                        <i class="fas fa-cog"></i>
+                        <span>Admin Panel</span>
+                    </a>
+                </li>
+                <li class="logout">
+                    <a href="logout.php" id="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
 
+        <!-- Main Content Area -->
         <main class="main-content">
-            <!-- Dashboard Page -->
-            <div id="dashboard" class="page">
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="page active">
                 <h2>Dashboard Overview</h2>
                 <div class="status-counts">
-                    <div class="status-box">
-                        <h3>On-Process</h3>
-                        <span id="onProcess" class="count">0</span>
+                    <div class="card" id="on-process">
+                        <h3>On Process</h3>
+                        <div class="count" id="onProcess">0</div>
                     </div>
-                    <div class="status-box">
-                        <h3>On-Hold</h3>
-                        <span id="onHold" class="count">0</span>
+                    <div class="card" id="on-hold">
+                        <h3>On Hold</h3>
+                        <div class="count" id="onHold">0</div>
                     </div>
-                    <div class="status-box">
+                    <div class="card" id="not-yet-filling">
                         <h3>Not Yet for Filling</h3>
-                        <span id="notYetFilling" class="count">0</span>
+                        <div class="count" id="notYetFilling">0</div>
                     </div>
                 </div>
 
-                <div class="section">
-                    <div class="section-header">
-                        <h3>Monthly Files</h3>
-                        <button class="btn-primary" onclick="showUploadModal()">
-                            <i class="material-icons">upload</i>
-                            Upload File
-                        </button>
+                <!-- Monthly Files Section -->
+                <div class="section-header">
+                    <h3>Monthly Files</h3>
+                    <div class="controls">
+                        <input type="text" id="file-search" placeholder="Search files...">
+                        <button class="btn" id="upload-btn">Upload New File</button>
                     </div>
-                    <div id="monthly-files"></div>
                 </div>
+                <div class="monthly-files" id="monthly-files"></div>
 
-                <div class="section">
+                <!-- Recent Files Section -->
+                <div class="recent-files">
                     <h3>Recent Activities</h3>
                     <div id="recent-files"></div>
                 </div>
-            </div>
+            </section>
 
-            <!-- Data Management Page -->
-            <div id="data-management" class="page">
+            <!-- Data Management Section -->
+            <section id="data-management" class="page">
+                <h2>Data Management</h2>
                 <div class="tabs">
-                    <button class="tab active" data-tab="divisions">Office and Organizational Code</button>
-                    <button class="tab" data-tab="spreadsheet">Spreadsheet</button>
+                    <div class="tab active" data-tab="divisions">Office and Organizational Code</div>
+                    <div class="tab" data-tab="spreadsheet">Spreadsheet</div>
                 </div>
 
-                <div id="divisions-content" class="tab-content">
-                    <div class="divisions-list"></div>
+                <div id="divisions-content" class="tab-content active">
+                    <div class="division-filter">
+                        <input type="text" id="division-search" placeholder="Search divisions...">
+                    </div>
+                    <div class="divisions-list" id="divisions-list"></div>
                 </div>
 
                 <div id="spreadsheet-content" class="tab-content">
-                    <table id="spreadsheet-container" 
-                           role="grid" 
-                           aria-label="Plantilla Data Grid">
-                        <thead role="rowgroup">
+                    <div class="excel-toolbar">
+                        <div class="toolbar-group">
+                            <button class="toolbar-btn" data-action="copy"><i class="fas fa-copy"></i></button>
+                            <button class="toolbar-btn" data-action="cut"><i class="fas fa-cut"></i></button>
+                            <button class="toolbar-btn" data-action="paste"><i class="fas fa-paste"></i></button>
+                        </div>
+                        <div class="toolbar-group">
+                            <button class="toolbar-btn" data-action="bold"><i class="fas fa-bold"></i></button>
+                            <button class="toolbar-btn" data-action="italic"><i class="fas fa-italic"></i></button>
+                            <button class="toolbar-btn" data-action="underline"><i class="fas fa-underline"></i></button>
+                        </div>
+                        <div class="toolbar-group">
+                            <button class="toolbar-btn" data-action="align-left"><i class="fas fa-align-left"></i></button>
+                            <button class="toolbar-btn" data-action="align-center"><i class="fas fa-align-center"></i></button>
+                            <button class="toolbar-btn" data-action="align-right"><i class="fas fa-align-right"></i></button>
+                        </div>
+                        <div class="toolbar-group">
+                            <select class="font-family">
+                                <option value="Arial">Arial</option>
+                                <option value="Times New Roman">Times New Roman</option>
+                                <option value="Calibri">Calibri</option>
+                            </select>
+                            <select class="font-size">
+                                <option value="8">8</option>
+                                <option value="9">9</option>
+                                <option value="10">10</option>
+                                <option value="11">11</option>
+                                <option value="12">12</option>
+                                <option value="14">14</option>
+                                <option value="16">16</option>
+                                <option value="18">18</option>
+                                <option value="20">20</option>
+                            </select>
+                        </div>
+                        <div class="toolbar-group">
+                            <button class="toolbar-btn color-picker" data-action="font-color">
+                                <i class="fas fa-font"></i>
+                                <input type="color" class="hidden-color-input">
+                            </button>
+                            <button class="toolbar-btn color-picker" data-action="fill-color">
+                                <i class="fas fa-fill-drip"></i>
+                                <input type="color" class="hidden-color-input">
+                            </button>
+                        </div>
+                        <div class="toolbar-group">
+                            <button class="toolbar-btn" data-action="merge"><i class="fas fa-compress-alt"></i></button>
+                            <button class="toolbar-btn" data-action="autofit"><i class="fas fa-arrows-alt-h"></i></button>
+                        </div>
+                    </div>
+                    <div class="formula-bar">
+                        <span class="cell-address">A1</span>
+                        <input type="text" class="formula-input" placeholder="Enter formula">
+                    </div>
+                    <div id="spreadsheet-container"></div>
+                </div>
+            </section>
+
+            <!-- Applicant Records Section -->
+            <section id="applicant-records" class="page">
+                <h2>Applicant Records</h2>
+                <div class="filter-section">
+                    <select id="month-filter">
+                        <option value="">Select Month</option>
+                        <!-- Months will be populated via JavaScript -->
+                    </select>
+                    <select id="division-filter-records">
+                        <option value="">Select Division</option>
+                        <!-- Divisions will be populated via JavaScript -->
+                    </select>
+                    <input type="text" id="search-records" placeholder="Search applicants...">
+                    <button class="btn btn-primary" id="add-applicant">Add New Applicant</button>
+                </div>
+                <div class="data-table">
+                    <table id="applicants-table">
+                        <thead>
                             <tr role="row">
-                                <!-- Headers will be added dynamically -->
+                                <th role="columnheader">ID No.</th>
+                                <th role="columnheader">Full Name</th>
+                                <th role="columnheader">Position Title</th>
+                                <th role="columnheader">Division</th>
+                                <th role="columnheader">Status</th>
+                                <th role="columnheader">Actions</th>
                             </tr>
                         </thead>
-                        <tbody role="rowgroup">
-                            <!-- Data rows will be added dynamically -->
-                        </tbody>
+                        <tbody role="rowgroup"></tbody>
                     </table>
                 </div>
-            </div>
-
-            <!-- Applicant Records Page -->
-            <div id="applicant-records" class="page">
-                <h2>Applicant Records</h2>
-                <div class="filters">
-                    <div class="filter-group">
-                        <label for="month-filter">Filter by Month</label>
-                        <select id="month-filter" aria-label="Filter records by month">
-                            <option value="">Select Month</option>
+                <form id="applicant-form">
+                    <div class="form-group">
+                        <label for="fullname">Full Name</label>
+                        <input type="text" id="fullname" name="fullname" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="sex">Sex</label>
+                        <select id="sex" name="sex" required title="Select sex">
+                            <option value="">Select</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Others">Others</option>
                         </select>
                     </div>
-                    <div class="filter-group">
-                        <label for="division-filter">Filter by Division</label>
-                        <select id="division-filter" aria-label="Filter records by division">
-                            <option value="">Select Division</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label for="search">Search Records</label>
-                        <input type="text" id="search" placeholder="Search applicants..." aria-label="Search applicant records">
-                    </div>
-                </div>
-                <table id="applicants-grid" 
-                       role="grid" 
-                       aria-label="Applicant Records Grid">
-                    <thead role="rowgroup">
-                        <tr role="row">
-                            <!-- Headers will be added dynamically -->
-                        </tr>
-                    </thead>
-                    <tbody role="rowgroup">
-                        <!-- Data rows will be added dynamically -->
-                    </tbody>
-                </table>
-            </div>
+                </form>
+            </section>
 
-            <!-- Admin Page -->
-            <div id="admin" class="page">
-                <h2>Admin Panel</h2>
-                <div class="user-management">
-                    <h3>User Management</h3>
-                    <div id="users-grid"></div>
+            <!-- Admin Panel Section -->
+            <section id="admin" class="page">
+                <h2>User Profile</h2>
+                <div class="user-profile">
+                    <div class="profile-card">
+                        <div class="profile-header">
+                            <i class="fas fa-user-circle profile-icon"></i>
+                            <h3 id="user-fullname"></h3>
+                            <p id="user-email"></p>
+                        </div>
+                        <div class="profile-details">
+                            <div class="detail-item">
+                                <span class="label">Role:</span>
+                                <span id="user-role"></span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="label">Last Login:</span>
+                                <span id="last-login"></span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="label">Account Status:</span>
+                                <span id="account-status"></span>
+                            </div>
+                        </div>
+                        <div class="profile-actions">
+                            <button id="change-password-btn" class="btn btn-primary">
+                                <i class="fas fa-key"></i> Change Password
+                            </button>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            </section>
         </main>
     </div>
 
     <!-- Modals -->
     <div id="upload-modal" class="modal">
         <div class="modal-content">
-            <div class="modal-header">
-                <h3>Upload Monthly File</h3>
-                <span class="close">&times;</span>
-            </div>
-            <form id="upload-form" enctype="multipart/form-data">
+            <span class="close">&times;</span>
+            <h3>Upload File</h3>
+            <form id="upload-form">
                 <div class="form-group">
-                    <label for="upload-month">Select Month</label>
-                    <input type="month" 
-                           id="upload-month" 
-                           name="upload_month" 
-                           required>
+                    <label for="file-month">Month</label>
+                    <input type="month" id="file-month" required>
                 </div>
                 <div class="form-group">
-                    <label for="upload-file">Choose File</label>
-                    <input type="file" 
-                           id="upload-file" 
-                           name="upload_file" 
-                           accept=".xls,.xlsx" 
-                           required>
-                    <small>Accepted formats: .xls, .xlsx</small>
+                    <label for="file-upload">Select File</label>
+                    <input type="file" id="file-upload" accept=".xlsx,.xls,.csv" required>
                 </div>
-                <button type="submit">Upload File</button>
+                <button type="submit">Upload</button>
             </form>
         </div>
     </div>
 
-    <div id="logout-modal" class="modal">
+    <!-- Add Password Change Modal -->
+    <div id="password-modal" class="modal">
         <div class="modal-content">
-            <h3>Confirm Logout</h3>
-            <p>Are you sure you want to logout?</p>
-            <div class="modal-buttons">
-                <button onclick="confirmLogout()">Yes</button>
-                <button onclick="closeModal('logout-modal')">No</button>
-            </div>
+            <span class="close">&times;</span>
+            <h3>Change Password</h3>
+            <form id="password-change-form">
+                <div class="form-group">
+                    <label for="current-password">Current Password</label>
+                    <input type="password" id="current-password" required>
+                </div>
+                <div class="form-group">
+                    <label for="new-password">New Password</label>
+                    <input type="password" id="new-password" required>
+                    <div class="password-strength"></div>
+                </div>
+                <div class="form-group">
+                    <label for="confirm-password">Confirm New Password</label>
+                    <input type="password" id="confirm-password" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Update Password</button>
+            </form>
         </div>
     </div>
 
     <!-- Scripts -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/handsontable@latest/dist/handsontable.full.min.js"></script>
-    <!-- Core modules -->
-    <script src="js/auth.js"></script>
-    <script src="js/script.js"></script>
-    <!-- Page modules -->
     <script src="js/dashboard.js"></script>
     <script src="js/data-management.js"></script>
     <script src="js/spreadsheet.js"></script>
-    <script src="js/applicant-records.js"></script>
-    <script src="js/admin.js"></script>
-    <!-- Initialize app -->
     <script>
+        // Remove login check and just initialize the app
         document.addEventListener('DOMContentLoaded', () => {
-            // Set default month value
-            const now = new Date();
-            const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-            document.getElementById('upload-month').value = currentMonth;
-            
-            // Initialize core modules
-            Auth.init();
-            
-            // Initialize page modules
-            const modules = {
-                dashboard: window.Dashboard,
-                'data-management': window.DataManagement,
-                'applicant-records': window.ApplicantRecords,
-                admin: window.AdminPanel
-            };
-
-            // Handle navigation
+            // Initialize navigation
             document.querySelectorAll('.nav-menu a').forEach(link => {
                 link.addEventListener('click', (e) => {
                     e.preventDefault();
-                    const pageId = link.getAttribute('data-page');
-                    
-                    // Update active states
-                    document.querySelectorAll('.nav-menu a').forEach(el => el.classList.remove('active'));
-                    link.classList.add('active');
-                    
-                    // Hide all pages
-                    document.querySelectorAll('.page').forEach(page => {
-                        page.style.display = 'none';
-                        page.classList.remove('active');
-                    });
-                    
-                    // Show and initialize target page
-                    const targetPage = document.getElementById(pageId);
-                    if (targetPage) {
-                        targetPage.style.display = 'block';
-                        targetPage.classList.add('active');
-                        
-                        // Initialize page module if exists
-                        if (modules[pageId] && typeof modules[pageId].init === 'function') {
-                            modules[pageId].init();
-                        }
-                    }
+                    const target = e.target.getAttribute('href').substring(1);
+                    showPage(target);
                 });
             });
 
-            // Load initial page
-            document.querySelector('.nav-menu a[data-page="dashboard"]').click();
+            // Set default page to dashboard
+            showPage('dashboard');
         });
+
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            document.getElementById(pageId).classList.add('active');
+        }
     </script>
 </body>
 </html>

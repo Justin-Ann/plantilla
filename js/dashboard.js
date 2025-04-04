@@ -1,223 +1,145 @@
-class Dashboard {
-    constructor() {
-        this.API_URL = 'http://localhost/HRIS/api';
-        this.initializeCounters();
-    }
+document.addEventListener('DOMContentLoaded', () => {
+    // Load initial data
+    loadStatusCounts();
+    loadMonthlyFiles();
+    loadRecentFiles();
 
-    async initializeCounters() {
-        try {
-            const response = await fetch(`${this.API_URL}/status-counts.php`);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            if (!data.success) {
-                throw new Error(data.message || 'Failed to fetch status counts');
-            }
-
-            this.updateCounters(data.data);
-        } catch (error) {
-            console.error('Error fetching status counts:', error);
-            this.showError('Failed to load status counts. Please refresh the page.');
-        }
-    }
-
-    updateCounters(counts) {
-        document.getElementById('onProcess').textContent = counts.onProcess;
-        document.getElementById('onHold').textContent = counts.onHold;
-        document.getElementById('notYetFilling').textContent = counts.notYetFilling;
-    }
-
-    showError(message) {
-        const dashboard = document.getElementById('dashboard');
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'error-message';
-        errorDiv.textContent = message;
-        dashboard.prepend(errorDiv);
-    }
-
-    async init() {
-        await this.loadStatusCounts();
-        await this.loadMonthlyFiles();
-        await this.loadRecentFiles();
-    }
-
-    destroy() {
-        if (this.refreshInterval) {
-            clearInterval(this.refreshInterval);
-            this.refreshInterval = null;
-        }
-        this.initialized = false;
-    }
-
-    startAutoRefresh() {
-        setInterval(() => {
-            this.loadStatusCounts();
-            this.loadRecentFiles();
-        }, 30000); // Refresh every 30 seconds
-    }
-
-    async loadStatusCounts() {
-        try {
-            const response = await fetch(`${this.API_URL}/status-counts.php`);
-            const data = await response.json();
-            
-            if (data.success) {
-                document.getElementById('onProcess').textContent = data.data.onProcess || '0';
-                document.getElementById('onHold').textContent = data.data.onHold || '0';
-                document.getElementById('notYetFilling').textContent = data.data.notYetFilling || '0';
-            }
-        } catch (error) {
-            console.error('Error loading status counts:', error);
-        }
-    }
-
-    async loadMonthlyFiles(month = null) {
-        const currentMonth = month || document.getElementById('month-picker').value;
-        try {
-            const response = await fetch(`${this.API_URL}/dashboard.php?action=monthly-files&month=${currentMonth}`);
-            const data = await response.json();
-            if (data.success) {
-                this.displayMonthlyFiles(data.data);
-            }
-        } catch (error) {
-            console.error('Error loading monthly files:', error);
-        }
-    }
-
-    displayMonthlyFiles(files) {
-        const container = document.getElementById('monthly-files');
-        container.innerHTML = '';
+    // Initialize month picker
+    const monthPicker = document.getElementById('month-picker');
+    if (monthPicker) {
+        const now = new Date();
+        const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        monthPicker.value = currentMonth;
         
-        files.forEach(file => {
-            const fileItem = document.createElement('div');
-            fileItem.className = 'file-item';
-            fileItem.innerHTML = `
-                <div class="file-info">
-                    <span class="filename">${file.original_filename}</span>
-                    <span class="upload-date">Uploaded: ${new Date(file.upload_date).toLocaleDateString()}</span>
-                </div>
-                <div class="file-actions">
-                    <button onclick="Dashboard.openFile(${file.id})" class="btn-primary">
-                        <i class="material-icons">open_in_new</i> Open
-                    </button>
-                    <button onclick="Dashboard.deleteFile(${file.id})" class="btn-danger">
-                        <i class="material-icons">delete</i>
-                    </button>
-                </div>
-            `;
-            container.appendChild(fileItem);
+        monthPicker.addEventListener('change', () => {
+            loadMonthlyFiles(monthPicker.value);
         });
     }
 
-    async loadRecentFiles() {
-        try {
-            const response = await fetch(`${this.API_URL}/dashboard.php?action=recent-files`);
-            const data = await response.json();
-            if (data.success) {
-                this.displayRecentFiles(data.data);
-            }
-        } catch (error) {
-            console.error('Error loading recent files:', error);
-        }
-    }
+    // Setup modal handlers
+    const uploadBtn = document.getElementById('upload-btn');
+    const uploadModal = document.getElementById('upload-modal');
+    const closeBtn = uploadModal?.querySelector('.close');
+    const uploadForm = document.getElementById('upload-form');
 
-    displayRecentFiles(files) {
-        const container = document.getElementById('recent-files');
-        container.innerHTML = '';
-        
-        files.forEach(file => {
-            const fileItem = document.createElement('div');
-            fileItem.className = 'recent-file';
-            fileItem.onclick = () => this.openFile(file.id);
-            fileItem.innerHTML = `
-                <div class="file-name">${file.original_filename}</div>
-                <div class="modified-date">Last modified: ${new Date(file.last_modified).toLocaleString()}</div>
-            `;
-            container.appendChild(fileItem);
+    if (uploadBtn && uploadModal) {
+        uploadBtn.addEventListener('click', () => {
+            uploadModal.style.display = 'block';
         });
     }
 
-    initializeUploadHandlers() {
-        const uploadForm = document.getElementById('upload-form');
-        if (!uploadForm) return;
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            uploadModal.style.display = 'none';
+        });
+    }
 
-        uploadForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const formData = new FormData(uploadForm);
-            const submitButton = uploadForm.querySelector('button[type="submit"]');
-            const originalText = submitButton.textContent;
-            
-            try {
-                submitButton.disabled = true;
-                submitButton.textContent = 'Uploading...';
-                
-                const response = await fetch(`${this.API_URL}/upload.php`, {
-                    method: 'POST',
-                    body: formData
+    // Close modal on outside click
+    window.addEventListener('click', (e) => {
+        if (e.target === uploadModal) {
+            uploadModal.style.display = 'none';
+        }
+    });
+
+    // Setup status card click handlers
+    document.querySelectorAll('.status-card').forEach(card => {
+        card.addEventListener('click', function() {
+            const status = this.dataset.status;
+            if (status) {
+                window.location.href = `data-management.php?status=${status}`;
+            }
+        });
+    });
+});
+
+function loadStatusCounts() {
+    fetch('api/dashboard_handler.php?action=status-counts')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                Object.entries(data.counts).forEach(([status, count]) => {
+                    const element = document.getElementById(status.toLowerCase().replace(/\s+/g, '-'));
+                    if (element) {
+                        element.querySelector('.count').textContent = count;
+                    }
                 });
-                
-                const result = await response.json();
-                
-                if (!response.ok) throw new Error(result.message || 'Upload failed');
-                
-                if (result.success) {
-                    alert('File uploaded successfully!');
-                    uploadForm.reset();
-                    this.loadMonthlyFiles();
-                    this.loadRecentFiles();
-                    
-                    // Close modal if exists
-                    const modal = document.getElementById('upload-modal');
-                    if (modal) modal.style.display = 'none';
-                } else {
-                    throw new Error(result.message || 'Upload failed');
-                }
-                
-            } catch (error) {
-                console.error('Upload error:', error);
-                alert(error.message || 'Error uploading file. Please try again.');
-            } finally {
-                submitButton.disabled = false;
-                submitButton.textContent = originalText;
             }
-        });
-    }
-
-    openFile(fileId) {
-        // Switch to data management page and open file
-        document.querySelector('.nav-menu a[data-page="data-management"]').click();
-        document.querySelector('.tab[data-tab="spreadsheet"]').click();
-        loadFileContent(fileId);
-    }
-
-    async deleteFile(fileId) {
-        if (!confirm('Are you sure you want to delete this file?')) return;
-        
-        try {
-            const response = await fetch(`${this.API_URL}/files.php?id=${fileId}`, {
-                method: 'DELETE'
-            });
-            const result = await response.json();
-            
-            if (result.success) {
-                this.loadMonthlyFiles();
-                this.loadRecentFiles();
-            } else {
-                alert('Error deleting file: ' + result.message);
-            }
-        } catch (error) {
-            console.error('Delete error:', error);
-            alert('Error deleting file');
-        }
-    }
+        })
+        .catch(error => console.error('Error loading status counts:', error));
 }
 
-// Initialize dashboard
-document.addEventListener('DOMContentLoaded', () => {
-    if (window.Dashboard) {
-        Dashboard.init();
-    }
-});
+function loadMonthlyFiles(month) {
+    fetch(`api/dashboard_handler.php?action=monthly-files&month=${month || ''}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const container = document.getElementById('monthly-files');
+                container.innerHTML = data.files.map(file => `
+                    <div class="file-item">
+                        <span>${file.filename}</span>
+                        <div class="file-actions">
+                            <button onclick="openFile('${file.id}')">Open</button>
+                            <button onclick="deleteFile('${file.id}')">Delete</button>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                const container = document.getElementById('monthly-files');
+                container.innerHTML = `<div class="error-message">Failed to load monthly files. Please try again.</div>`;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading monthly files:', error);
+            const container = document.getElementById('monthly-files');
+            container.innerHTML = `<div class="error-message">Failed to load monthly files. Please try again.</div>`;
+        });
+}
+
+function loadRecentFiles() {
+    fetch('api/dashboard_handler.php?action=recent-files')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const recentList = document.getElementById('recent-files');
+                recentList.innerHTML = data.files.map(file => `
+                    <div class="recent-file" onclick="openFile(${file.id})">
+                        <div class="file-name">${file.filename}</div>
+                        <div class="modified-date">
+                            Last modified: ${new Date(file.last_edited).toLocaleString()}
+                            by ${file.last_editor}
+                        </div>
+                    </div>
+                `).join('') || '<div class="no-files">No recent files found</div>';
+            } else {
+                const recentList = document.getElementById('recent-files');
+                recentList.innerHTML = '<div class="error-message">Failed to load recent files. Please try again.</div>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading recent files:', error);
+            const recentList = document.getElementById('recent-files');
+            recentList.innerHTML = '<div class="error-message">Failed to load recent files. Please try again.</div>';
+        });
+}
+
+function uploadFile(event) {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    fetch('api/dashboard_handler.php?action=upload-file', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('File uploaded successfully');
+            loadMonthlyFiles();
+        } else {
+            alert('Failed to upload file');
+        }
+    })
+    .catch(error => {
+        console.error('Error uploading file:', error);
+        alert('Failed to upload file');
+    });
+}

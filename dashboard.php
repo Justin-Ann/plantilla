@@ -15,8 +15,6 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
     <title>Dashboard - Plantilla Management System</title>
     <link rel="stylesheet" href="css/styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.css" rel="stylesheet">
 </head>
 <body>
     <div class="container">
@@ -29,8 +27,5 @@ if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true){
         </div>
     </div>
     <script src="js/script.js"></script>
-    <script src="js/dashboard.js"></script>
-    <script src="js/data-management.js"></script>
-    <script src="js/applicant-records.js"></script>
 </body>
 </html>
