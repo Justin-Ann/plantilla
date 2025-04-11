@@ -70,10 +70,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                                 if ($_SESSION["role"] == "admin") {
                                     // Redirect to dashboard
-                                    header("location: pages/dashboard.php");
+                                    header("location: admin/dashboard.php");
                                 } else {
                                     // Redirect to dashboard
-                                    header("location: dashboard.php");
+                                    header("location: pages/dashboard.php");
                                 }
 
 
@@ -114,7 +114,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <body>
     <div class="login-container">
         <div class="logo">
-            <img src="dost-pagasa-logo.png" alt="DOST-PAGASA Logo">
+            <img src="img/dost-pagasa-logo.png" alt="DOST-PAGASA Logo">
         </div>
         <h2>Plantilla Management System</h2>
 
