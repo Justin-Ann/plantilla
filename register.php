@@ -58,7 +58,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $param_password = password_hash($password, PASSWORD_ARGON2I);
             $param_role = "user";
             $verification_token = bin2hex(random_bytes(32));
-            $verification_token = bin2hex(random_bytes(16));
             $verification_expires = date("Y-m-d H:i:s", strtotime('+1 day'));
 
             mysqli_stmt_bind_param($stmt, "ssssss", $param_username, $param_password, $email, $param_role, $verification_token, $verification_expires);

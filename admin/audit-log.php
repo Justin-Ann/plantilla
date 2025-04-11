@@ -5,7 +5,6 @@ require_once "../auth_middleware.php";
 
 check_admin();
 
-// Get audit logs with pagination
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $per_page = 50;
 $offset = ($page - 1) * $per_page;
@@ -76,8 +75,6 @@ $total_pages = ceil($total_rows / $per_page);
                     </tbody>
                 </table>
             </div>
-            
-            <!-- Pagination -->
             <div class="pagination">
                 <?php for($i = 1; $i <= $total_pages; $i++): ?>
                     <a href="?page=<?php echo $i; ?>" 
@@ -89,6 +86,7 @@ $total_pages = ceil($total_rows / $per_page);
         </div>
     </div>
     
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
     <script src="../js/audit-log.js"></script>
 </body>
 </html>
