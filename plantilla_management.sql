@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Apr 11, 2025 at 11:48 PM
+-- Generation Time: Apr 16, 2025 at 05:30 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -198,7 +198,7 @@ CREATE TABLE `file_history` (
 --
 
 INSERT INTO `file_history` (`id`, `file_id`, `action`, `user_id`, `timestamp`) VALUES
-(1, 1, 'Created', 13, '2025-04-11 21:35:24');
+(5, 5, 'Created', 13, '2025-04-16 03:02:45');
 
 -- --------------------------------------------------------
 
@@ -337,15 +337,16 @@ CREATE TABLE `uploaded_files` (
   `modified_by` int(11) DEFAULT NULL,
   `last_modified` timestamp NULL DEFAULT NULL ON UPDATE current_timestamp(),
   `status` enum('processing','completed','error') DEFAULT 'processing',
-  `error_message` text DEFAULT NULL
+  `error_message` text DEFAULT NULL,
+  `division_code` varchar(10) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `uploaded_files`
 --
 
-INSERT INTO `uploaded_files` (`id`, `filename`, `original_filename`, `file_path`, `upload_date`, `month_year`, `uploaded_by`, `modified_by`, `last_modified`, `status`, `error_message`) VALUES
-(1, '67f98b1cae815_Toggl_Track_summary_report_2025-04-07_2025-04-13.csv', 'Toggl_Track_summary_report_2025-04-07_2025-04-13.csv', '../uploads/67f98b1cae815_Toggl_Track_summary_report_2025-04-07_2025-04-13.csv', '2025-04-11 21:35:24', '2025-04', 13, NULL, NULL, 'processing', NULL);
+INSERT INTO `uploaded_files` (`id`, `filename`, `original_filename`, `file_path`, `upload_date`, `month_year`, `uploaded_by`, `modified_by`, `last_modified`, `status`, `error_message`, `division_code`) VALUES
+(5, '67ff1dd513847_test db.xlsx', 'test db.xlsx', '../uploads/67ff1dd513847_test db.xlsx', '2025-04-16 03:02:45', '2025-04', 13, NULL, '2025-04-16 03:10:22', 'completed', NULL, 'AD');
 
 -- --------------------------------------------------------
 
@@ -374,8 +375,8 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `username`, `email`, `password`, `role`, `email_verified`, `verification_token`, `verification_expires`, `last_login`, `active`, `reset_token`, `reset_expires`, `created_at`) VALUES
-(5, 'FrancisPogi', 'francistengteng10@gmail.com', '$2y$10$9Z9kl3B7LPDxq9amNPcMBeHIjnFgzHz8h03gEoBdx56jBZNRTO.V2', 'admin', 1, '', '2025-04-12 21:52:53', '2025-04-12 05:45:01', 1, '', '0000-00-00 00:00:00', '2025-04-11 19:52:53'),
-(13, 'Francis Pogi', 'cabusasfg779@gmail.com', '$2y$10$LtvBgw/qIdv3BfeX55vI9e7R8DnMHmdokgIjyZr.7okBHF3gY5sRq', 'user', 1, '', '2025-04-12 22:52:53', '2025-04-12 05:45:46', 0, '', '0000-00-00 00:00:00', '2025-04-11 20:52:53');
+(5, 'FrancisPogi', 'francistengteng10@gmail.com', '$2y$10$9Z9kl3B7LPDxq9amNPcMBeHIjnFgzHz8h03gEoBdx56jBZNRTO.V2', 'admin', 1, '', '2025-04-12 21:52:53', '2025-04-16 10:54:52', 1, '', '0000-00-00 00:00:00', '2025-04-11 19:52:53'),
+(13, 'Francis Pogi', 'cabusasfg779@gmail.com', '$2y$10$LtvBgw/qIdv3BfeX55vI9e7R8DnMHmdokgIjyZr.7okBHF3gY5sRq', 'user', 1, '', '2025-04-12 22:52:53', '2025-04-16 10:55:07', 0, '', '0000-00-00 00:00:00', '2025-04-11 20:52:53');
 
 --
 -- Indexes for dumped tables
@@ -526,7 +527,7 @@ ALTER TABLE `division_definitions`
 -- AUTO_INCREMENT for table `file_history`
 --
 ALTER TABLE `file_history`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `file_versions`
@@ -538,7 +539,7 @@ ALTER TABLE `file_versions`
 -- AUTO_INCREMENT for table `login_attempts`
 --
 ALTER TABLE `login_attempts`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
 -- AUTO_INCREMENT for table `monthly_files`
@@ -574,7 +575,7 @@ ALTER TABLE `status_tracking`
 -- AUTO_INCREMENT for table `uploaded_files`
 --
 ALTER TABLE `uploaded_files`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `users`

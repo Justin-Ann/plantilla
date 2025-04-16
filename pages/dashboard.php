@@ -49,6 +49,21 @@
             <h3>Upload Monthly File</h3>
             <form id="upload-form" enctype="multipart/form-data" method="POST">
                 <div class="form-group">
+                    <label for="division">Select Division</label>
+                    <select id="division" name="division_code" required>
+                        <option value="">-- Select Division --</option>
+                        <?php
+                        require_once "../config.php";
+                        $query = "SELECT division_code, division_name FROM division_definitions ORDER BY division_order";
+                        $result = mysqli_query($conn, $query);
+                        while ($row = mysqli_fetch_assoc($result)) {
+                            echo "<option value='{$row['division_code']}'>{$row['division_name']}</option>";
+                        }
+                        ?>
+                    </select>
+                </div>
+
+                <div class="form-group">
                     <label for="file-month">Month</label>
                     <input type="month" id="file-month" name="month_year" required>
                 </div>

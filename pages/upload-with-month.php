@@ -3,7 +3,7 @@ session_start();
 
 require_once "../config.php";
 
-function uploadFileWithMonth($file, $monthYear, $userId)
+function uploadFileWithMonth($file, $monthYear, $userId, $divisionCode)
 {
     global $conn;
     $targetDir = "../uploads/";
@@ -21,13 +21,13 @@ function uploadFileWithMonth($file, $monthYear, $userId)
     }
 
     if (move_uploaded_file($file['tmp_name'], $targetFile)) {
-        $sql = "INSERT INTO uploaded_files (filename, original_filename, file_path, month_year, uploaded_by) 
-                VALUES (?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO uploaded_files (filename, original_filename, file_path, month_year, uploaded_by, division_code) 
+                VALUES (?, ?, ?, ?, ?, ?)";
         $stmt = mysqli_prepare($conn, $sql);
         if ($stmt === false) {
             return ['success' => false, 'message' => 'Error preparing SQL statement: ' . mysqli_error($conn)];
         }
-        mysqli_stmt_bind_param($stmt, "ssssi", $filename, $file['name'], $targetFile, $monthYear, $userId);
+        mysqli_stmt_bind_param($stmt, "ssssis", $filename, $file['name'], $targetFile, $monthYear, $userId, $divisionCode);
         if (!mysqli_stmt_execute($stmt)) {
             return ['success' => false, 'message' => 'Error inserting file data into the database: ' . mysqli_error($conn)];
         }
@@ -51,13 +51,14 @@ function uploadFileWithMonth($file, $monthYear, $userId)
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_FILES['file-upload']) && isset($_POST['month_year']) && isset($_SESSION['id'])) {
-        $userId = $_SESSION['id'];  // Assuming the user is logged in
+    if (isset($_FILES['file-upload']) && isset($_POST['month_year']) && isset($_POST['division_code']) && isset($_SESSION['id'])) {
+        $userId = $_SESSION['id'];
         $monthYear = $_POST['month_year'];
+        $divisionCode = $_POST['division_code'];
         $file = $_FILES['file-upload'];
-        $response = uploadFileWithMonth($file, $monthYear, $userId);
+        $response = uploadFileWithMonth($file, $monthYear, $userId, $divisionCode);
         echo json_encode($response);
     } else {
-        echo json_encode(['success' => false, 'message' => 'Invalid request. Missing file, month, or user.']);
+        echo json_encode(['success' => false, 'message' => 'Invalid request. Missing file, month, division, or user.']);
     }
 }

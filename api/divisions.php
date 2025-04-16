@@ -46,7 +46,7 @@ switch ($_GET['action'] ?? 'get_divisions') {
 
     case 'get_divisions':
         try {
-            $query = "SELECT id, code, name FROM divisions ORDER BY code";
+            $query = "SELECT id, division_code, division_name FROM division_definitions ORDER BY division_code";
             $result = $conn->query($query);
 
             if (!$result) {
@@ -57,8 +57,8 @@ switch ($_GET['action'] ?? 'get_divisions') {
             while ($row = $result->fetch_assoc()) {
                 $divisions[] = [
                     'id' => $row['id'],
-                    'code' => $row['code'],
-                    'name' => $row['name']
+                    'division_code' => $row['division_code'],
+                    'division_name' => $row['division_name']
                 ];
             }
 
